@@ -1,0 +1,92 @@
+build/*
+build-old/*
+out/*
+apps/out/*
+*.h5
+CMakeSettings.json
+eval/
+
+# Byte-compiled and other Python-specific files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.pdb
+*.egg-info/
+*.eggs/
+*.whl
+
+# Virtual environment directories
+env/
+venv/
+.venv/
+
+# Cache and log files
+*.log
+*.sqlite3
+*.db
+*.dat
+*.tmp
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Python-specific package files
+.Python
+*.manifest
+*.spec
+
+# Distribution/build directories
+build/
+dist/
+*.egg
+*.egg-info/
+.installed.cfg
+*.wheel
+pip-log.txt
+
+# IDE and editor-specific files
+.vscode/
+.vs/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Test coverage reports
+htmlcov/
+.tox/
+.nox/
+*.cover
+*.coverage
+.coverage.*
+
+# pytest cache
+.pytest_cache/
+
+# Mypy type checker reports
+.mypy_cache/
+
+# Profiling and debugging
+*.prof
+*.lprof
+*.out
+*.err
+
+# Generated documentation
+docs/_build/
+*.rst~
+
+# Temporary files and backups
+*.bak
+*.swp
+*.swo
+~$*
+
+# training data
+runs/
+tensorboard/
+models/

@@ -1,0 +1,54 @@
+Bootstrap: docker
+From: nvidia/cuda:12.1.1-devel-ubuntu22.04
+
+%labels
+    Author Niklas Merk
+    Version v1.0
+
+%post
+    # Update package lists
+    apt-get update
+
+    # Install build essentials and CMake and Git
+    apt-get install -y build-essential cmake git libc6-dev
+
+    # Install OpenGL and X11 development libraries
+    apt-get install -y \
+        libglu1-mesa-dev \
+	libgl1-mesa-dev \
+	freeglut3-dev \
+	mesa-utils \
+	mesa-common-dev \
+        libx11-dev \
+        libxrandr-dev \
+        libxinerama-dev \
+        libxcursor-dev \
+        libxi-dev \
+        xorg-dev
+
+    # (Optional) Install any additional libraries your project needs, e.g., GLFW, GLEW, etc.
+    apt-get install -y libglfw3-dev libglew-dev libglm-dev libao-dev libmpg123-dev libwayland-dev libxkbcommon-dev
+
+    # install other tools that we needed
+    apt-get install -y vim wget jq curl
+
+    # Install tensorrt package
+    apt-get install -y tensorrt-dev
+
+    # Clean up to reduce image size
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+%environment
+    # Set environment variables if needed
+    export LC_ALL=C
+    export LANG=C
+    
+    # Prepend the standard CUDA library path to LD_LIBRARY_PATH
+    # Use 'export' and handle potential existing value
+    export LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
+    # You might also need to ensure CUDA bin is definitely first in PATH
+    export PATH="/usr/local/cuda/bin:${PATH}"
+
+%runscript
+    # Default command: open an interactive shell.
+    exec /bin/bash "$@"

@@ -1,0 +1,26 @@
+name: deepses
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+  - conda-forge
+dependencies:
+  - python
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - einops
+  - h5py
+  - tqdm
+  - rich
+  - pip
+  - cytoolz
+  - tensorboard
+  - tmux
+  - htop
+  - pytorch
+  - pytorch-cuda=12.1
+  - pip:
+    - onnx
+    - onnxscript
