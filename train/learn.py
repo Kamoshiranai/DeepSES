@@ -32,6 +32,7 @@ print_loss_per_batch = False
 print_status_info = True
 BATCHES_2_AVERAGE_LOSS = 16 # average loss over BATCHES_2_AVERAGE_LOSS and return to tb on each validation
 EPOCHS = 100
+VALIDATE_EVERY_EPOCH = True #NOTE: if False, validates only after each pass through whole dataset
 save_best_model = True
 
 # model parameters
@@ -41,7 +42,6 @@ CHANNEL_MULTS = [1,2,4]
 RES_BLOCKS = 1
 DROP_OUT = 0
 USE_ND_DROP_OUT = False
-NO_MID_ATTENTION = True
 
 training_data_ses_path = 'train/sdf_data/ses'
 training_data_vdw_path = 'train/sdf_data/vdw'
@@ -293,7 +293,7 @@ def fw_pass(model, loss_fn, X, y):
     
     return modified_loss, raw_loss
     
-def train_one_epoch(training_loader, loss_fn, optimizer, scheduler, epoch_number, tensorboard_writer, patch_weights = None):
+def train_one_epoch(training_loader, loss_fn, optimizer, scheduler, epoch_number, tensorboard_writer):
 
     running_loss = torch.zeros(1, device = DEVICE)
     running_raw_loss = torch.zeros(1, device = DEVICE)
@@ -316,7 +316,7 @@ def train_one_epoch(training_loader, loss_fn, optimizer, scheduler, epoch_number
 
         #NOTE: reduce memory usage by function scoping of python (discards predictions from last fw pass before computing next fw pass) -> slight speed up
 
-        loss, raw_loss = fw_pass(model, loss_fn, X_batch, y_batch, patch_weights)
+        loss, raw_loss = fw_pass(model, loss_fn, X_batch, y_batch)
 
         elapsed_time = time.perf_counter() - start_batch
 
@@ -329,6 +329,8 @@ def train_one_epoch(training_loader, loss_fn, optimizer, scheduler, epoch_number
         optimizer.zero_grad()
         loss.backward() # changes gradients      
         optimizer.step() # changes weights
+        # Suppress warning of more workers than recommended
+        warnings.filterwarnings("ignore", category=UserWarning, message="The epoch parameter in*")
         scheduler.step()
 
         running_loss += loss.detach() #NOTE loss.item() might force synchronization
@@ -383,9 +385,6 @@ if __name__ == "__main__":
 
     sdf_file_names = [name for name in os.listdir(training_data_vdw_path) if os.path.isfile(os.path.join(training_data_vdw_path, name))] 
 
-    # # TODO for testing only take first ... files
-    # sdf_file_names = sdf_file_names[:20]
-
     # test-validate/test split
     file_names_train, file_names_test = train_test_split(sdf_file_names, train_size=0.8, shuffle=True, random_state=SEED)
 
@@ -400,9 +399,9 @@ if __name__ == "__main__":
     if print_status_info:
         print("initialize datasets...")
 
-    # NOTE: here you can set the number of files from the train, validation and test set that should be stored in the RAM (can adjust for your available RAM)
-    training_set = HDF5_Dataset_sliding_window(training_data_vdw_path, training_data_ses_path, file_names_train, number_of_files_ram = 250, epoch_size = EPOCH_SIZE)
-    validation_set = HDF5_Dataset(training_data_vdw_path, training_data_ses_path, file_names_validate, number_of_files_ram = 40)
+    # NOTE: here you can set the number of files from the train, validation and test set that should be stored in the RAM. One file (actually vdw + ses file) is ~1GB in total (can adjust for your available RAM)
+    training_set = HDF5_Dataset_sliding_window(training_data_vdw_path, training_data_ses_path, file_names_train, number_of_files_ram = 32, epoch_size = EPOCH_SIZE)
+    validation_set = HDF5_Dataset(training_data_vdw_path, training_data_ses_path, file_names_validate, number_of_files_ram = 8)
     test_set = HDF5_Dataset(training_data_vdw_path, training_data_ses_path, file_names_test, number_of_files_ram = 0)
 
     # prepare optimizer
@@ -443,7 +442,6 @@ if __name__ == "__main__":
         "res_blocks" : RES_BLOCKS,
         "drop out": DROP_OUT,
         "use nd drop out": USE_ND_DROP_OUT,
-        "no mid attention": NO_MID_ATTENTION,
         "learning rate": START_LEARNING_RATE, 
         "batch size": BATCH_SIZE, 
         "number of epochs": EPOCHS,
@@ -477,8 +475,8 @@ if __name__ == "__main__":
             print(f"Loss training {training_loss:.2e}, duration {(time.perf_counter() - start_epoch) / 60:.2f} min")
         tb_writer.add_scalar('Time/Epoch_duration', (time.perf_counter() - start_epoch), epoch + 1)
 
-        # Validate only after one pass through dataset
-        if (EPOCH_SIZE is None) or ( epoch >= 2 and ((epoch+1) * EPOCH_SIZE) % (len(file_names_train) * training_set.number_of_patches**3) <= EPOCH_SIZE ):
+        #NOTE: Validate only after one pass through dataset
+        if (EPOCH_SIZE is None) or ( epoch >= 2 and ((epoch+1) * EPOCH_SIZE) % (len(file_names_train) * training_set.number_of_patches**3) <= EPOCH_SIZE ) or VALIDATE_EVERY_EPOCH:
 
             model.train(False) # no need to track gradients for validation
             with torch.no_grad():
@@ -512,7 +510,6 @@ if __name__ == "__main__":
                 "res_blocks" : RES_BLOCKS,
                 "drop out": DROP_OUT,
                 "use nd drop out": USE_ND_DROP_OUT,
-                "no mid attention": NO_MID_ATTENTION,
                 'batch_size': BATCH_SIZE,
                 "patch_size": training_set.patch_size,
                 'seed': SEED,
@@ -525,7 +522,7 @@ if __name__ == "__main__":
                 }
 
                 if save_best_model:
-                    torch.save(checkpoint_dict_best_model, f"train/runs/{timestamp}/checkpoint_dict_best_model.tar")
+                    torch.save(checkpoint_dict_best_model, f"runs/{timestamp}/checkpoint_dict_best_model.tar")
 
     end_training = time.time()
     training_time = end_training-start_training

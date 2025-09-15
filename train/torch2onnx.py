@@ -5,7 +5,8 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # DEVICE = torch.device("cpu")
 
 # load model checkpoint and parameters
-checkpoint_dict_model = torch.load(f"train/unet_4_ch_1-2-4_mults_10_06_2025/checkpoint_dict_best_model.tar") #, map_location=torch.device("cpu"))
+checkpoint_dict_model = torch.load(f"models/unet_4_ch_1-2-4_mults_10_06_2025/checkpoint_dict_best_model.tar") #, map_location=torch.device("cpu")) #NOTE: set to path of model you want to convert
+onnx_model_path = f"models/unet_4_ch_1-2-4_mults_10_06_2025/model.onnx" #NOTE set to save path
 
 NUM_INNER_CHANNELS = checkpoint_dict_model["number of inner channels"]
 CHANNEL_MULTS = checkpoint_dict_model["channel_mults"]
@@ -51,7 +52,7 @@ dummy_input = torch.randn(1, 1, PATCH_SIZE, PATCH_SIZE, PATCH_SIZE).to(DEVICE)
 torch.onnx.export(
     model, 
     dummy_input, 
-    f"train/unet_4_ch_1-2-4_mults_10_06_2025/model_batch_size=dynamic.onnx", 
+    onnx_model_path,
     input_names=["input"], 
     output_names=["output"],
     opset_version=20,

@@ -10,17 +10,17 @@ import matplotlib.pyplot as plt
 from models import My_UNet_3x, UNet_no_attn
 #from learn import HDF5_Dataset
 
-test_data_vdw_path = 'train/sdf_data/vdw_eval'
-test_data_ses_path = 'train/sdf_data/ses_eval'
-test_data_hermosilla_path = 'train/eval/hermosilla'
+test_data_vdw_path = 'sdf_data/vdw_eval'
+test_data_ses_path = 'sdf_data/ses_eval'
+test_data_hermosilla_path = 'sdf_data/hermosilla_eval'
 
-output_filename = "train/unet_4_ch_1-2-4_mults_10_06_2025/results.txt"
+output_filename = "unet_4_ch_1-2-4_mults_10_06_2025/results.txt"
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # DEVICE = torch.device("cpu")
 
 # load model checkpoint and parameters
-model_path = "train/unet_4_ch_1-2-4_mults_10_06_2025/checkpoint_dict_best_model.tar"
+model_path = "unet_4_ch_1-2-4_mults_10_06_2025/checkpoint_dict_best_model.tar" #NOTE: set this to the path of the model you want to test
 checkpoint_dict_model = torch.load(model_path) #, map_location=torch.device("cpu"))
 
 NUM_INNER_CHANNELS = checkpoint_dict_model["number of inner channels"]
@@ -41,6 +41,7 @@ filenames_test = [name for name in os.listdir(test_data_vdw_path) if os.path.isf
 print("testing on files: ", filenames_test)
 
 # set up model
+# NOTE: use the type of the model you want to test
 
 # model = UNet_no_attn(
 #     dims = 3,

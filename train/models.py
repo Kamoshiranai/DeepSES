@@ -91,15 +91,15 @@ class Block(nn.Module):
 class UNet_no_attn(nn.Module):
     def __init__(
         self,
-        dims=3, # SR3: 3
-        in_channel=1, # SR3: 2
-        out_channel=1, # SR3: 1
-        inner_channel=4, # NOTE SR3 uses 64, we might not be able to do this ^^
+        dims=3,
+        in_channel=1,
+        out_channel=1,
+        inner_channel=4,
         norm_groups=1,
-        channel_mults=[1, 2, 4], # SR3: [1, 2, 4]
-        res_blocks=1, # SR3: 4
-        dropout=0, # SR3: 0.1
-        image_size=64, # SR3: 32
+        channel_mults=[1, 2, 4],
+        res_blocks=1,
+        dropout=0,
+        image_size=64,
         use_nd_dropout=False,
     ):
         super().__init__()

@@ -1,9 +1,7 @@
-name: deepses
+name: deepses_release
 channels:
-  - pytorch
-  - nvidia
-  - defaults
   - conda-forge
+  - defaults
 dependencies:
   - python
   - numpy
@@ -16,11 +14,12 @@ dependencies:
   - rich
   - pip
   - cytoolz
-  - tensorboard
   - tmux
   - htop
-  - pytorch
-  - pytorch-cuda=12.1
+  - matplotlib
   - pip:
+    - torch # or if this fails because your driver is too old, install via pip wheel
+    - tensorboard #NOTE: avoids mismatch with tensorboard utils of torch
+    # pip install torch --index-url https://download.pytorch.org/whl/cuxxx, adjust to you cuda version!
     - onnx
     - onnxscript

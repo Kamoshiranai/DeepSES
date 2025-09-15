@@ -4,7 +4,7 @@ out/*
 apps/out/*
 *.h5
 CMakeSettings.json
-eval/
+torch_info.py
 
 # Byte-compiled and other Python-specific files
 *.pyc
@@ -87,6 +87,4 @@ docs/_build/
 ~$*
 
 # training data
-runs/
 tensorboard/
-models/
