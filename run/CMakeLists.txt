@@ -271,11 +271,6 @@ else()
     )
     FetchContent_MakeAvailable(glfw)
 
-    # include gemmi
-
-    # set(FETCH_ZLIB_NG "ON")
-    find_package(ZLIB REQUIRED)
-
     # Find CUDA
     find_package(CUDA REQUIRED)
     message(STATUS "CUDA Found: ${CUDA_FOUND}")
@@ -301,6 +296,11 @@ else()
         find_library(${libName}_lib NAMES ${libName} "/usr" PATH_SUFFIXES lib)
         list(APPEND PLUGIN_LIBS "${${libName}_lib}")
     endforeach()
+
+    # include gemmi
+
+    # set(FETCH_ZLIB_NG "ON") #NOTE could also download, build statically and use zlib-ng instead
+    find_package(ZLIB REQUIRED)
 
     FetchContent_Declare(
     gemmi
