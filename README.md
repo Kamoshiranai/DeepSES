@@ -133,7 +133,7 @@ cd apps
 ./interactive-deepses_with_ao <path_to_this_repo>/deepses/run/data/pdb/vcbm_eval/<some_molecule_file>.cif.gz 8
 ```
 
-5. You can also run a reimplementation of the [Hermosilla method](https://doi.org/10.1007/s00371-017-1397-2) or render just the van-der-Waals surface
+5. You can also run a re-implementation of the [Hermosilla method](https://doi.org/10.1007/s00371-017-1397-2) or render just the van-der-Waals surface
 ```bash
 # Hermosilla method
 ./interactive-hermosilla-method <path_to_this_repo>/deepses/run/data/pdb/vcbm_eval/<some_molecule_file>.cif.gz 8
@@ -146,7 +146,7 @@ cd apps
 
 ## Downloading other .cif.gz / .pdb files form the PDB
 
-This repository also includes a bash script to download random files for molecules from the [PDB](https://www.rcsb.org/). You can adjust how many files should be downloaded and in which range the number of atoms of the molecules should be.
+This repository also includes a bash script to download random molecule files from the [PDB](https://www.rcsb.org/). You can adjust how many files should be downloaded and in which range the number of atoms of the molecules should be.
 
 ```bash
 cd run
