@@ -82,7 +82,7 @@ unzip sdf_data.zip
 
 ### Training Instructions
 
-In the file [learn.py](learn.py) you can adjust the training parameters (choose the model, batch size, number of epochs, how much ram to use, etc.)     
+In the file [train/learn.py](learn.py) you can adjust the training parameters (choose the model, batch size, number of epochs, how much ram to use, etc.)     
 Run training with:
 
 ```bash
