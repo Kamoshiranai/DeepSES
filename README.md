@@ -7,7 +7,7 @@
 [![CUDA](https://img.shields.io/badge/CUDA-red.svg)](https://developer.nvidia.com/cuda-zone)
 [![TensorRT](https://img.shields.io/badge/TensorRT-red.svg)](https://developer.nvidia.com/tensorrt)
 
-This repository contains the code accompanying the paper **DeepSES: Learning solvent-excluded surfaces via neural signed distance fields** ([link to paper]).   
+This repository contains the code accompanying the paper **DeepSES: Learning solvent-excluded surfaces via neural signed distance fields** [View Paper](https://doi.org/10.1016/j.cag.2025.104392).   
 It can be used to train a neural network for predicting the signed distance field (SDF) of the solvent-excluded surface (SES) of a molecule from the SDF of the van-der-Waals (vdW) surface and render the SES at interactive frame rates.
 
 ---
@@ -55,7 +55,7 @@ This repository accompanies the following paper:
 **Title:** *DeepSES: Learning solvent-excluded surfaces via neural signed distance fields*  
 **Authors:** Niklas Merk, Anna Sterzik, Kai Lawonn  
 **Published in:** *Computers & Graphics (C&G), VCBM 2025*  
-**Paper link:** [View Paper](INSERT_PAPER_LINK_HERE)
+**Paper link:** [View Paper](https://doi.org/10.1016/j.cag.2025.104392)
 
 ---
 
@@ -161,12 +161,12 @@ chmod +x download_random_pdb_or_cif.sh
 If you use this code in your research, please cite our paper:
 
 ```
-@article{your2025paper,
+@article{DeepSES,
   title={DeepSES: Learning Solvent-Excluded Surfaces via Neural Signed Distance Fields},
   author={Merk, Niklas and Sterzik, Anna and Lawonn, Kai},
   journal={Computers & Graphics (C&G), VCBM},
   year={2025},
-  url={INSERT_PAPER_LINK_HERE}
+  doi={10.1016/j.cag.2025.104392}
 }
 ```
 
