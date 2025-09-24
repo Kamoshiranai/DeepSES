@@ -10,6 +10,8 @@
 This repository contains the code accompanying the paper **DeepSES: Learning solvent-excluded surfaces via neural signed distance fields** [View Paper](https://doi.org/10.1016/j.cag.2025.104392).   
 It can be used to train a neural network for predicting the signed distance field (SDF) of the solvent-excluded surface (SES) of a molecule from the SDF of the van-der-Waals (vdW) surface and render the SES at interactive frame rates.
 
+![Alt text](graphical_abstract.png)
+
 ---
 
 ## Table of Contents
@@ -175,3 +177,5 @@ If you use this code in your research, please cite our paper:
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+
+![Alt text](example_SES.png)
