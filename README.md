@@ -164,11 +164,14 @@ If you use this code in your research, please cite our paper:
 
 ```
 @article{DeepSES,
-  title={DeepSES: Learning Solvent-Excluded Surfaces via Neural Signed Distance Fields},
+  title = {DeepSES: Learning solvent-excluded surfaces via neural signed distance fields},
   author={Merk, Niklas and Sterzik, Anna and Lawonn, Kai},
-  journal={Computers & Graphics (C&G), VCBM},
-  year={2025},
-  doi={10.1016/j.cag.2025.104392}
+  pages = {104392},
+  year = {2025},
+  issn = {0097-8493},
+  doi = {10.1016/j.cag.2025.104392},
+  url = {https://www.sciencedirect.com/science/article/pii/S009784932500233X},
+  keywords = {Biomolecular structure visualization, Solvent-excluded surface, Neural signed distance fields, 3D U-Nets},
 }
 ```
 
