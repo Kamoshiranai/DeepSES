@@ -166,6 +166,8 @@ If you use this code in your research, please cite our paper:
 @article{DeepSES,
   title = {DeepSES: Learning solvent-excluded surfaces via neural signed distance fields},
   author={Merk, Niklas and Sterzik, Anna and Lawonn, Kai},
+  journal = {Computers & Graphics},
+  volume = {133},
   pages = {104392},
   year = {2025},
   issn = {0097-8493},
