@@ -6,7 +6,7 @@
 #include <arcballCamera/arcballCamera.h>
 #include <learnopengl/compute_shader.h>
 #include <learnopengl/shader.h>
-#include <uncertainty/cif+pdbLoader.h>
+#include <cif+pdbLoader.h>
 #include <utilities.h>
 
 #include <nvml.h> // for gpu memory
@@ -16,11 +16,6 @@
 
 #include <chrono> // for fps calculation
 #include <numeric> // for std::accumulate
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image/stb_image.h>
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image/stb_image_write.h>
 
 // DEBUG
 // // Callback function to handle debug messages
@@ -537,19 +532,19 @@ int main(int argc, char *argv[]) {
   // ------------------------------------------------------------------------------
   double lastTime = glfwGetTime();
   int nbFrames = 0;
-  raymarch_shader->use();
-  raymarch_shader->setInt("num_atoms", num_atoms);
-  raymarch_shader->setFloat("r_probe", r_probe);
+  raymarch_shader.use();
+  raymarch_shader.setInt("num_atoms", num_atoms);
+  raymarch_shader.setFloat("r_probe", r_probe);
 
-  raymarch_shader->setVec3("dims", dim_grid);
-  raymarch_shader->setFloat("grid_res", resolution);
+  raymarch_shader.setVec3("dims", dim_grid);
+  raymarch_shader.setFloat("grid_res", resolution);
 
-  phong_shader->use();
-  phong_shader->setBool("bool_uniform_color", bool_uniform_color);
-  phong_shader->setInt("tex_pos", 1);
-  phong_shader->setInt("tex_normal", 2);
-  phong_shader->setInt("tex_color", 3);
-  phong_shader->setVec3("uniform_color", uniform_color);
+  phong_shader.use();
+  phong_shader.setBool("bool_uniform_color", bool_uniform_color);
+  phong_shader.setInt("tex_pos", 1);
+  phong_shader.setInt("tex_normal", 2);
+  phong_shader.setInt("tex_color", 3);
+  phong_shader.setVec3("uniform_color", uniform_color);
 
   // view = camera.GetViewMatrix();
 
@@ -678,7 +673,7 @@ int main(int argc, char *argv[]) {
 
     // Display FPS
     std::cout << "FPS: " << instantaneous_fps << " , avg. FPS: " << average_fps << std::endl;
-    std::cout << "avg. frame time: " << average_delta_time * 1000.0 << " +/- " << std_dev_delta_time * 1000.0 << "ms" << std::endl;
+    std::cout << "avg. frame time: " << average_delta_time * 1000.0 << " +/- " << std_dev_delta_time * 1000.0 << "ms" << "\n" << std::endl;
 
     //NOTE: optionally print to file
     // if ((currentFrameIndex >= 2 * NUM_FRAMES_DELAY) && !outfile_written) {
@@ -708,10 +703,8 @@ int main(int argc, char *argv[]) {
     // Camera
     // ------------------------------------------------------------------------------
 
-    // Uncomment for rotating molecule
-    float angle = 10.0;
-
-    camera.rotate_angle_axis(glm::radians(angle), glm::vec3(0, 1, 0));
+    //NOTE: Uncomment for rotating molecule
+    // camera.rotate_angle_axis(glm::radians(10.0), glm::vec3(0, 1, 0));
     camera_changed = true;
 
     if (!setView) {
@@ -834,12 +827,12 @@ int main(int argc, char *argv[]) {
       // ------------------------------------------------------------------------------
       // Raymarch the SDF
       // ------------------------------------------------------------------------------
-      raymarch_shader->use();
-      raymarch_shader->setMat4("view", view);
-      raymarch_shader->setMat4("projection", projection);
-      raymarch_shader->setVec3("camera_pos", camera_pos);
-      raymarch_shader->setVec3("camera_front", camera_front);
-      raymarch_shader->setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
+      raymarch_shader.use();
+      raymarch_shader.setMat4("view", view);
+      raymarch_shader.setMat4("projection", projection);
+      raymarch_shader.setVec3("camera_pos", camera_pos);
+      raymarch_shader.setVec3("camera_front", camera_front);
+      raymarch_shader.setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
 
       glDispatchCompute((GLuint)SCR_WIDTH / 4, (GLuint)SCR_HEIGHT / 4, 1);
       glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -851,8 +844,8 @@ int main(int argc, char *argv[]) {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      phong_shader->use();
-      phong_shader->setVec3("camera_pos", camera_pos);
+      phong_shader.use();
+      phong_shader.setVec3("camera_pos", camera_pos);
       glDrawArrays(GL_TRIANGLES, 0, 6);
       glDisable(GL_BLEND);
 
@@ -868,9 +861,6 @@ int main(int argc, char *argv[]) {
   // Clean up
   glDeleteVertexArrays(1, &quadVAO);
   glDeleteBuffers(1, &quadVBO);
-
-  delete raymarch_shader;
-  delete phong_shader;
 
   // Clean up timers for performance measurements
   cleanupTimers();

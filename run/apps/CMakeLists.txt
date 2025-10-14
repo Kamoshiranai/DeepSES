@@ -18,7 +18,7 @@ if(WIN32)
     target_link_libraries(create_engine PRIVATE ${CUDA_LIBRARIES} ${TensorRT_LIBRARIES} ${TensorRT_NVONNXPARSER_LIBRARY} ${HDF5_LIBRARIES})
     target_include_directories(create_engine PRIVATE ../include ${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIR})
 
-    add_executable(interactive-deepses interactive-deepses.cc thrust_wrapper.cu reshape_kernels.cu filter_patches_kernels.cu ../shaders/raymarch_get_visited_patches.cu)
+    add_executable(interactive-deepses interactive-deepses.cc thrust_wrapper.cu filter_patches_kernels.cu ../shaders/raymarch_get_visited_patches.cu)
     # target_compile_features(interactive-deepses PRIVATE cxx_std_11)
     target_compile_features(interactive-deepses PRIVATE cxx_std_17)
 
@@ -28,7 +28,7 @@ if(WIN32)
     set_target_properties(interactive-deepses PROPERTIES CUDA_SEPARABLE_COMPILATION ON) # for printf
     target_include_directories(interactive-deepses PRIVATE ../include ${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIR})
 
-    add_executable(interactive-deepses_with_ao interactive-deepses_with_ao.cc thrust_wrapper.cu reshape_kernels.cu filter_patches_kernels.cu ../shaders/raymarch_get_visited_patches.cu)
+    add_executable(interactive-deepses_with_ao interactive-deepses_with_ao.cc thrust_wrapper.cu filter_patches_kernels.cu ../shaders/raymarch_get_visited_patches.cu)
     # target_compile_features(interactive-deepses_with_ao PRIVATE cxx_std_11)
     target_compile_features(interactive-deepses_with_ao PRIVATE cxx_std_17)
 
@@ -52,10 +52,10 @@ if(WIN32)
         COMMENT "Copy shaders to build tree"
         VERBATIM)
 
-    add_dependencies(interactive_deepses copy_shaders)
-    add_dependencies(interactive_deepses_with_ao copy_shaders)
-    add_dependencies(interactive_hermosilla_method copy_shaders)
-    add_dependencies(interactive_vdw copy_shaders)
+    add_dependencies(interactive-deepses copy_shaders)
+    add_dependencies(interactive-deepses_with_ao copy_shaders)
+    add_dependencies(interactive-hermosilla_method copy_shaders)
+    add_dependencies(interactive-vdw copy_shaders)
 
 else()
 
@@ -75,7 +75,7 @@ else()
     target_link_libraries(create_engine PRIVATE ${CUDA_LIBRARIES} ${TensorRT_LIBRARIES} ${nvinfer_lib} ${nvonnxparser_lib}) #CUDA::cudart not working?
     target_include_directories(create_engine PRIVATE ../include ${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
 
-    add_executable(interactive-deepses interactive-deepses.cc thrust_wrapper.cu reshape_kernels.cu filter_patches_kernels.cu ../shaders/raymarch_get_visited_patches.cu)
+    add_executable(interactive-deepses interactive-deepses.cc thrust_wrapper.cu filter_patches_kernels.cu ../shaders/raymarch_get_visited_patches.cu)
     target_compile_features(interactive-deepses PRIVATE cxx_std_11)
 
     target_compile_options(interactive-deepses PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-rdc=true>) # for printf
@@ -84,7 +84,7 @@ else()
     set_target_properties(interactive-deepses PROPERTIES CUDA_SEPARABLE_COMPILATION ON) # for printf
     target_include_directories(interactive-deepses PRIVATE ../include ${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
 
-    add_executable(interactive-deepses_with_ao interactive-deepses_with_ao.cc thrust_wrapper.cu reshape_kernels.cu filter_patches_kernels.cu ../shaders/raymarch_get_visited_patches.cu)
+    add_executable(interactive-deepses_with_ao interactive-deepses_with_ao.cc thrust_wrapper.cu filter_patches_kernels.cu ../shaders/raymarch_get_visited_patches.cu)
     target_compile_features(interactive-deepses_with_ao PRIVATE cxx_std_11)
 
     target_compile_options(interactive-deepses_with_ao PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-rdc=true>) # for printf
@@ -94,7 +94,7 @@ else()
     target_include_directories(interactive-deepses_with_ao PRIVATE ../include ${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIRS})
 
     add_executable(interactive-vdw interactive-vdw.cc)
-    target_compile_features(vdw PRIVATE cxx_std_11)
+    target_compile_features(interactive-vdw PRIVATE cxx_std_11)
 
     target_link_libraries(interactive-vdw PRIVATE glfw glad glm gemmi::gemmi_cpp ZLIB::ZLIB)
     target_include_directories(interactive-vdw PRIVATE ../include)
@@ -106,9 +106,9 @@ else()
         COMMENT "Copy shaders to build tree"
         VERBATIM)
 
-    add_dependencies(interactive_deepses copy_shaders)
-    add_dependencies(interactive_deepses_with_ao copy_shaders)
-    add_dependencies(interactive_hermosilla_method copy_shaders)
-    add_dependencies(interactive_vdw copy_shaders)
+    add_dependencies(interactive-deepses copy_shaders)
+    add_dependencies(interactive-deepses_with_ao copy_shaders)
+    add_dependencies(interactive-hermosilla-method copy_shaders)
+    add_dependencies(interactive-vdw copy_shaders)
 
 endif()

@@ -6,13 +6,8 @@
 #include <arcballCamera/arcballCamera.h>
 #include <learnopengl/compute_shader.h>
 #include <learnopengl/shader.h>
-#include <uncertainty/cif+pdbLoader.h>
+#include <cif+pdbLoader.h>
 #include <utilities.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image/stb_image.h>
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image/stb_image_write.h>
 
 #include <chrono> // for fps calculation
 #include <numeric> // for std::accumulate
@@ -318,35 +313,35 @@ void checkCudaErrorCode(cudaError_t code) {
 //   std::cerr << "Message: " << message << std::endl;
 // }
 
-// // Helper function to check for OpenGL errors
-// // Call this after potentially error-prone sections
-// inline void checkGLError(const char* checkpoint_name = "") {
-//     GLenum error;
-//     bool errors_found = false;
-//     while ((error = glGetError()) != GL_NO_ERROR) {
-//         errors_found = true;
-//         std::cerr << "OpenGL Error";
-//         if (checkpoint_name && checkpoint_name[0] != '\0') {
-//             std::cerr << " at " << checkpoint_name;
-//         }
-//         std::cerr << ": ";
-//         switch (error) {
-//             case GL_INVALID_ENUM:      std::cerr << "GL_INVALID_ENUM"; break;
-//             case GL_INVALID_VALUE:     std::cerr << "GL_INVALID_VALUE"; break;
-//             case GL_INVALID_OPERATION: std::cerr << "GL_INVALID_OPERATION"; break;
-//             case GL_STACK_OVERFLOW:    std::cerr << "GL_STACK_OVERFLOW"; break;
-//             case GL_STACK_UNDERFLOW:   std::cerr << "GL_STACK_UNDERFLOW"; break;
-//             case GL_OUT_OF_MEMORY:     std::cerr << "GL_OUT_OF_MEMORY"; break;
-//             case GL_INVALID_FRAMEBUFFER_OPERATION: std::cerr << "GL_INVALID_FRAMEBUFFER_OPERATION"; break;
-//             default:                   std::cerr << "Unknown error code: " << error; break;
-//         }
-//         std::cerr << std::endl;
-//     }
-//     // Optional: Assert or throw if an error was found to halt execution immediately
-//     // if (errors_found) {
-//     //     throw std::runtime_error("OpenGL Error detected!");
-//     // }
-//   }
+// Helper function to check for OpenGL errors
+// Call this after potentially error-prone sections
+inline void checkGLError(const char* checkpoint_name = "") {
+    GLenum error;
+    bool errors_found = false;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        errors_found = true;
+        std::cerr << "OpenGL Error";
+        if (checkpoint_name && checkpoint_name[0] != '\0') {
+            std::cerr << " at " << checkpoint_name;
+        }
+        std::cerr << ": ";
+        switch (error) {
+            case GL_INVALID_ENUM:      std::cerr << "GL_INVALID_ENUM"; break;
+            case GL_INVALID_VALUE:     std::cerr << "GL_INVALID_VALUE"; break;
+            case GL_INVALID_OPERATION: std::cerr << "GL_INVALID_OPERATION"; break;
+            case GL_STACK_OVERFLOW:    std::cerr << "GL_STACK_OVERFLOW"; break;
+            case GL_STACK_UNDERFLOW:   std::cerr << "GL_STACK_UNDERFLOW"; break;
+            case GL_OUT_OF_MEMORY:     std::cerr << "GL_OUT_OF_MEMORY"; break;
+            case GL_INVALID_FRAMEBUFFER_OPERATION: std::cerr << "GL_INVALID_FRAMEBUFFER_OPERATION"; break;
+            default:                   std::cerr << "Unknown error code: " << error; break;
+        }
+        std::cerr << std::endl;
+    }
+    // Optional: Assert or throw if an error was found to halt execution immediately
+    // if (errors_found) {
+    //     throw std::runtime_error("OpenGL Error detected!");
+    // }
+  }
 
 // NOTE: helper functions
 std::string getFileExtension(const std::string& filename) {
@@ -968,11 +963,11 @@ int main(int argc, char *argv[]) {
   // build TensorRT engine
   nvinfer1::IRuntime* runtime = nvinfer1::createInferRuntime(logger);
   // open model from file
-  const std::string enginePath = "run/data/engines/unet_4_ch_1-2-4_mults_10_06_25_FP16.trt";
+  const std::string enginePath = "../../data/engines/unet_4_ch_1-2-4_mults_10_06_25_FP16.trt";
 
   std::ifstream file(enginePath, std::ios::binary);
-  // write to .txt file
-  outFile << "engine: " << enginePath << std::endl;
+  // // write to .txt file
+  // outFile << "engine: " << enginePath << std::endl;
 
   // set batch size here
   const int batchSize = 64; // for inference
@@ -1125,19 +1120,19 @@ int main(int argc, char *argv[]) {
 
   double lastTime = glfwGetTime();
   int nbFrames = 0;
-  raymarch_shader->use();
-  raymarch_shader->setInt("num_atoms", num_atoms);
-  raymarch_shader->setFloat("r_probe", r_probe);
+  raymarch_shader.use();
+  raymarch_shader.setInt("num_atoms", num_atoms);
+  raymarch_shader.setFloat("r_probe", r_probe);
 
-  raymarch_shader->setVec3("dims", dim_grid);
-  raymarch_shader->setFloat("grid_res", resolution);
+  raymarch_shader.setVec3("dims", dim_grid);
+  raymarch_shader.setFloat("grid_res", resolution);
 
-  phong_shader->use();
-  phong_shader->setBool("bool_uniform_color", bool_uniform_color);
-  phong_shader->setInt("tex_pos", 1);
-  phong_shader->setInt("tex_normal", 2);
-  phong_shader->setInt("tex_color", 3);
-  phong_shader->setVec3("uniform_color", uniform_color);
+  phong_shader.use();
+  phong_shader.setBool("bool_uniform_color", bool_uniform_color);
+  phong_shader.setInt("tex_pos", 1);
+  phong_shader.setInt("tex_normal", 2);
+  phong_shader.setInt("tex_color", 3);
+  phong_shader.setVec3("uniform_color", uniform_color);
 
   // field width from chimerax needs to be halfed
   w *= 0.5;
@@ -1408,7 +1403,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout << "avg. processed patches: " << average_processed_patches << " +/- " << std_dev_processed_patches << std::endl;
+    std::cout << "avg. processed patches: " << average_processed_patches << " +/- " << std_dev_processed_patches << "\n" << std::endl;
     //NOTE: optionally print to file + also write gpu memory usage to file
     // if ((currentFrameIndex >= 2 * NUM_FRAMES_DELAY) && !outfile_written) {
     //   outFile << "avg. processed patches: " << average_processed_patches << " +/- " << std_dev_processed_patches << std::endl;
@@ -1439,7 +1434,7 @@ int main(int argc, char *argv[]) {
     // ------------------------------------------------------------------------------
 
     //NOTE: Uncomment for rotating molecule
-    camera.rotate_angle_axis(glm::radians(10.0), glm::vec3(0, 1, 0));
+    // camera.rotate_angle_axis(glm::radians(10.0), glm::vec3(0, 1, 0));
 
     camera_changed = true; //NOTE: do not change!
 
@@ -1593,7 +1588,9 @@ int main(int argc, char *argv[]) {
         checkCudaErrors(cudaEventRecord(cudaStartEvents_raymarch[writeIndex], stream));
 
         launchRaymarchAndCheckRangeKernel(raymarchParams, sdf_min, sdf_max, epsilon, blocksRaymarchKernel, threadsRaymarchKernel, stream);
-        // launchCheckRangeKernel(raymarchParams, sdf_min, sdf_max, epsilon, blocksCheckRangeKernel, threadsCheckRangeKernel, stream); //NOTE: no raymarching filter
+        //NOTE: no raymarching filter, only range check
+        // Can also be used to calculate the sdf once and then keep fixed (set model_changed to false), if your molecule does not change
+        // launchCheckRangeKernel(raymarchParams, sdf_min, sdf_max, epsilon, blocksCheckRangeKernel, threadsCheckRangeKernel, stream);
 
         // NOTE: can use this instead to set all patches to 1 (relevant)
         // dim3 blocks(patches_per_dim);
@@ -1676,7 +1673,6 @@ int main(int argc, char *argv[]) {
           size_t offset = batch * batchSize * patchVoxels;
 
           float* batchInput  = reinterpret_cast<float*>(filteredBatchedInputBuffer) + offset;
-          float* batchOutput = reinterpret_cast<float*>(filteredBatchedInputBuffer) + offset; //TODO can i remove this?
           
           // set batch size in tensor shape for last inference call if neccessary
           int actualBatchSize = batchSize;
@@ -1698,11 +1694,11 @@ int main(int argc, char *argv[]) {
           if (!context->setTensorAddress(inputTensorName.c_str(), static_cast<void*>(batchInput))) {
             throw std::runtime_error("Adress to input tensor not set correctly.");
           }
-          if (!context->setTensorAddress(outputTensorName.c_str(), static_cast<void*>(batchOutput))) {
+          if (!context->setTensorAddress(outputTensorName.c_str(), static_cast<void*>(batchInput))) {
             throw std::runtime_error("Adress to output tensor not set correctly.");
           }
 
-          if (reinterpret_cast<uintptr_t>(batchInput) % 256 != 0 || reinterpret_cast<uintptr_t>(batchOutput) % 256 != 0) {
+          if (reinterpret_cast<uintptr_t>(batchInput) % 256 != 0) {
             std::cerr << "Warning: TensorRT tensor address is not 256-byte aligned!" << std::endl;
           }
 
@@ -1771,12 +1767,12 @@ int main(int argc, char *argv[]) {
       // ------------------------------------------------------------------------------
       // Raymarch the SDF
       // ------------------------------------------------------------------------------
-      raymarch_shader->use();
-      raymarch_shader->setMat4("view", view);
-      raymarch_shader->setMat4("projection", projection);
-      raymarch_shader->setVec3("camera_pos", camera_pos);
-      raymarch_shader->setVec3("camera_front", camera_front);
-      raymarch_shader->setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
+      raymarch_shader.use();
+      raymarch_shader.setMat4("view", view);
+      raymarch_shader.setMat4("projection", projection);
+      raymarch_shader.setVec3("camera_pos", camera_pos);
+      raymarch_shader.setVec3("camera_front", camera_front);
+      raymarch_shader.setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
 
       glDispatchCompute((GLuint)SCR_WIDTH / 4, (GLuint)SCR_HEIGHT / 4, 1);
       glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -1788,8 +1784,8 @@ int main(int argc, char *argv[]) {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      phong_shader->use();
-      phong_shader->setVec3("camera_pos", camera_pos);
+      phong_shader.use();
+      phong_shader.setVec3("camera_pos", camera_pos);
       glDrawArrays(GL_TRIANGLES, 0, 6);
       glDisable(GL_BLEND);
 
@@ -1806,9 +1802,6 @@ int main(int argc, char *argv[]) {
   glDeleteVertexArrays(1, &quadVAO);
   glDeleteBuffers(1, &quadVBO);
 
-  delete raymarch_shader;
-  delete phong_shader;
-
   // Clean up timers for performance measurements
   cleanupTimers();
 
@@ -1818,7 +1811,7 @@ int main(int argc, char *argv[]) {
   checkCudaErrors(cudaFree(scanResults));
   cudaStreamDestroy(stream);
 
-  outFile.close();
+  // outFile.close();
 
   glfwTerminate();
   return 0;

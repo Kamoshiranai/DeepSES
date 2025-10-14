@@ -6,13 +6,8 @@
 #include <arcballCamera/arcballCamera.h>
 #include <learnopengl/compute_shader.h>
 #include <learnopengl/shader.h>
-#include <uncertainty/cif+pdbLoader.h>
+#include <cif+pdbLoader.h>
 #include <utilities.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image/stb_image.h>
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <stb_image/stb_image_write.h>
 
 // DEBUG
 // // Callback function to handle debug messages
@@ -435,19 +430,19 @@ int main(int argc, char *argv[]) {
   // ------------------------------------------------------------------------------
   double lastTime = glfwGetTime();
   int nbFrames = 0;
-  raymarch_shader->use();
-  raymarch_shader->setInt("num_atoms", num_atoms);
-  raymarch_shader->setFloat("r_probe", r_probe);
+  raymarch_shader.use();
+  raymarch_shader.setInt("num_atoms", num_atoms);
+  raymarch_shader.setFloat("r_probe", r_probe);
 
-  raymarch_shader->setVec3("dims", dim_grid);
-  raymarch_shader->setFloat("grid_res", resolution);
+  raymarch_shader.setVec3("dims", dim_grid);
+  raymarch_shader.setFloat("grid_res", resolution);
 
-  phong_shader->use();
-  phong_shader->setBool("bool_uniform_color", bool_uniform_color);
-  phong_shader->setInt("tex_pos", 0);
-  phong_shader->setInt("tex_normal", 1);
-  phong_shader->setInt("tex_color", 2);
-  phong_shader->setVec3("uniform_color", uniform_color);
+  phong_shader.use();
+  phong_shader.setBool("bool_uniform_color", bool_uniform_color);
+  phong_shader.setInt("tex_pos", 0);
+  phong_shader.setInt("tex_normal", 1);
+  phong_shader.setInt("tex_color", 2);
+  phong_shader.setVec3("uniform_color", uniform_color);
 
   // field width from chimerax needs to be halfed
   w *= 0.5;
@@ -527,14 +522,14 @@ int main(int argc, char *argv[]) {
       // ------------------------------------------------------------------------------
       // Raymarch the SDF
       // ------------------------------------------------------------------------------
-      raymarch_shader->use();
-      raymarch_shader->setMat4("view", view);
-      raymarch_shader->setMat4("projection", projection);
-      raymarch_shader->setVec3("camera_pos", camera_pos);
-      raymarch_shader->setVec3("camera_front", camera_front);
-      raymarch_shader->setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
-      raymarch_shader->setInt("grid", 0);
-      raymarch_shader->setInt("grid_b_factor", 4);
+      raymarch_shader.use();
+      raymarch_shader.setMat4("view", view);
+      raymarch_shader.setMat4("projection", projection);
+      raymarch_shader.setVec3("camera_pos", camera_pos);
+      raymarch_shader.setVec3("camera_front", camera_front);
+      raymarch_shader.setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
+      raymarch_shader.setInt("grid", 0);
+      raymarch_shader.setInt("grid_b_factor", 4);
 
       glDispatchCompute((GLuint)SCR_WIDTH / 4, (GLuint)SCR_HEIGHT / 4, 1);
       glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -546,8 +541,8 @@ int main(int argc, char *argv[]) {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       glEnable(GL_BLEND);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      phong_shader->use();
-      phong_shader->setVec3("camera_pos", camera_pos);
+      phong_shader.use();
+      phong_shader.setVec3("camera_pos", camera_pos);
       glDrawArrays(GL_TRIANGLES, 0, 6);
       glDisable(GL_BLEND);
 
@@ -560,9 +555,6 @@ int main(int argc, char *argv[]) {
   // Clean up
   glDeleteVertexArrays(1, &quadVAO);
   glDeleteBuffers(1, &quadVBO);
-
-  delete raymarch_shader;
-  delete phong_shader;
 
   glfwTerminate();
   return 0;

@@ -12,7 +12,7 @@
 #include <stdexcept> // For exceptions
 #include <map>
 #include <memory> // For std::unique_ptr
-#include <hdf5.h>
+// #include <hdf5.h> //NOTE: only needed when using quantization
 
 // #include <dirent.h>   // For opendir, readdir, closedir //NOTE: this package is not availabe under Windows, there is a C++17 version of the file handling below which does not require this...
 #include <sys/stat.h> // For stat (optional but recommended for checking file type)
@@ -63,18 +63,6 @@ public:
         }                                                                    \
     } while (0)
 
-// Helper function to check HDF5 calls
-#define CHECK_HDF5(call)                                                      \
-    do {                                                                      \
-        herr_t status = call;                                                 \
-        if (status < 0) {                                                     \
-            std::cerr << "HDF5 Error at " << __FILE__ << ":" << __LINE__      \
-                      << std::endl;                                           \
-            /* H5Eprint(H5E_DEFAULT, stderr); // Optional: Print detailed HDF5 error stack */ \
-            throw std::runtime_error("HDF5 error");                           \
-        }                                                                     \
-    } while (0)
-
 // NOTE: this can be used for INT8 quantization with tensorRT, but we found better performance with single precision (FP16) on our setup
 
 /**
@@ -84,7 +72,19 @@ public:
  * @return A vector of filenames (not full paths) found in the directory.
  * @throws std::runtime_error on directory access errors.
  */
-/* std::vector<std::string> listFilesWithExtensionPosix(const std::string& directoryPath, const std::string& extension) {
+/* 
+    // Helper function to check HDF5 calls
+    #define CHECK_HDF5(call)                                                      \
+    do {                                                                      \
+        herr_t status = call;                                                 \
+        if (status < 0) {                                                     \
+            std::cerr << "HDF5 Error at " << __FILE__ << ":" << __LINE__      \
+                      << std::endl;                                           \
+            throw std::runtime_error("HDF5 error");                           \
+        }                                                                     \
+    } while (0)
+
+    std::vector<std::string> listFilesWithExtensionPosix(const std::string& directoryPath, const std::string& extension) {
     std::vector<std::string> filenames;
     DIR* dirHandle = opendir(directoryPath.c_str());
 
@@ -473,9 +473,9 @@ int main()
     // const std::string CACHE_FILENAME = "calibration.cache";
 
     // Define file paths
-    const char* modelFile = "run/data/models/unet_8_ch_1-2-4-4_mults_02_06_25.onnx";  // Path to your ONNX model file
+    const char* modelFile = "../../data/engines/unet_4_ch_1-2-4_mults_10_06_25.onnx";  // Path to your ONNX model file
     
-    const char* engineFile = "run/data/engines/unet_8_ch_1-2-4-4_mults_02_06_25_FP16.trt";  // Path where the engine will be saved
+    const char* engineFile = "../../data/engines/unet_4_ch_1-2-4_mults_10_06_25_FP16.trt";  // Path where the engine will be saved
 
     // set optimal/max batch size
     const int BATCH_SIZE = 64;
