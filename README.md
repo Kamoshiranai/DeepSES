@@ -117,6 +117,7 @@ singularity exec --nv deepses.sif bash
 3. Build the C++ code inside the container:
 
 ```bash
+cd run
 mkdir build && cd build
 cmake ..
 make
