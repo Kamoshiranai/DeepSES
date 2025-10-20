@@ -107,12 +107,12 @@ Depending on your gpu driver version it might be neccessary to choose a differen
 
 2.  a) If you driver is supported by Toolkit version 12.8, smile and skipt to the next step.
 
-    b) If your driver is only supported by newer Toolkit versions, check this [support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html) for which base image you need and change the first line in [tensorrt+opengl.def](run/tensorrt+opengl.def) accordingly.
+    b) If your driver is only supported by newer Toolkit versions, check this [support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html) for which base image you need and change the second line in [tensorrt+opengl.def](run/tensorrt+opengl.def) accordingly.
 
     c) If you driver is only supported by older Toolkit versions, you have two options you can try:
 
     1. Use an older version of TensorRT:    
-    Check this [support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html) for what is the newest base image you can use with your driver and change the first line in [tensorrt+opengl.def](run/tensorrt+opengl.def) accordingly.    
+    Check this [support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html) for what is the newest base image you can use with your driver and change the second line in [tensorrt+opengl.def](run/tensorrt+opengl.def) accordingly.    
     Note that the API of TensorRT might be different for older versions and some features might be not supported.
 
     2. Use a different base image to combine an older Toolkit version with TensorRT version 10.9.   
