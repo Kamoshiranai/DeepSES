@@ -1,0 +1,56 @@
+Bootstrap: docker
+From: nvcr.io/nvidia/tensorrt:25.03-py3 # NOTE: adapt to container version supported by your gpu driver
+
+%labels
+    Author Niklas Merk
+    Version v1.0
+    Description TensorRT + OpenGL + build environment for C++/CUDA development
+
+%post
+    # Update and install development tools
+    apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        git \
+        vim \
+        wget \
+        jq \
+        curl \
+        zlib1g-dev
+
+    # Install OpenGL and X11 development libraries
+    apt-get install -y --no-install-recommends \
+        libglu1-mesa-dev \
+        libgl1-mesa-dev \
+        freeglut3-dev \
+        mesa-utils \
+        mesa-common-dev \
+        libx11-dev \
+        libxrandr-dev \
+        libxinerama-dev \
+        libxcursor-dev \
+        libxi-dev \
+        xorg-dev \
+        libglfw3-dev \
+        libglew-dev \
+        libglm-dev \
+        libao-dev \
+        libmpg123-dev \
+        libwayland-dev \
+        libxkbcommon-dev
+
+    # Clean up to reduce image size
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+%environment
+    # Locale settings
+    export LC_ALL=C
+    export LANG=C
+
+    # CUDA & TensorRT paths (already set in base image, but reinforced)
+    export PATH="/usr/local/cuda/bin:${PATH}"
+    export LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
+
+%runscript
+    # Default command: start an interactive shell
+    exec /bin/bash "$@"

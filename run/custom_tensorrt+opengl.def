@@ -1,0 +1,109 @@
+Bootstrap: docker
+From: nvidia/cuda:12.1.1-devel-ubuntu22.04 #NOTE: set to cuda version compatible with your gpu driver
+
+%labels
+    Author Niklas Merk
+    Version v1.0
+
+%post
+    # Update package lists
+    apt-get update
+
+    # Install build essentials and CMake and Git
+    apt-get install -y build-essential cmake git libc6-dev
+
+    # Set up nvidia repo containing other tensorrt versions
+
+    # Install some utilities
+    apt-get install -y --no-install-recommends wget gnupg ca-certificates
+
+    # Prep for getting specific tensorrt version
+
+    # Backup any files containing the NVIDIA repo and remove the offending lines
+    # (this will leave backups with .bak suffix)
+    for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+    if [ -f "$f" ] && grep -q "developer.download.nvidia.com/compute/cuda/repos/ubuntu2204" "$f"; then
+        echo "Backing up $f -> $f.bak and removing existing NVIDIA repo lines"
+        cp "$f" "$f.bak"
+        # delete any lines referencing the specific NVIDIA repo
+        sed -i '\|developer.download.nvidia.com/compute/cuda/repos/ubuntu2204|d' "$f"
+    fi
+    done
+
+    # (optional) remove any stale single-file repo that might still point to different key
+    rm -f /etc/apt/sources.list.d/cuda.list /etc/apt/sources.list.d/nvidia-ml.list /etc/apt/sources.list.d/cuda-nvidia.list || true
+
+    # Fetch and dearmor the NVIDIA public key into a single keyring file
+    wget -qO- https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/3bf863cc.pub \
+    | gpg --dearmor -o /usr/share/keyrings/nvidia-cuda-archive-keyring.gpg
+
+    # Add one canonical repo file that uses the above keyring
+    echo "deb [signed-by=/usr/share/keyrings/nvidia-cuda-archive-keyring.gpg] \
+    https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /" \
+    > /etc/apt/sources.list.d/cuda-nvidia.list
+
+    apt-get update
+
+    # Install OpenGL and X11 development libraries
+    apt-get install -y \
+        libglu1-mesa-dev \
+	libgl1-mesa-dev \
+	freeglut3-dev \
+	mesa-utils \
+	mesa-common-dev \
+        libx11-dev \
+        libxrandr-dev \
+        libxinerama-dev \
+        libxcursor-dev \
+        libxi-dev \
+        xorg-dev
+
+    # (Optional) Install any additional libraries your project needs, e.g., GLFW, GLEW, etc.
+    apt-get install -y libglfw3-dev libglew-dev libglm-dev libao-dev libmpg123-dev libwayland-dev libxkbcommon-dev zlib1g-dev
+
+    # install other tools that we needed
+    apt-get install -y vim wget jq curl
+
+    # Now install specific TensorRT packages (force downgrades allowed)
+    # NOTE: DeepSES was tested with tensorrt version 10.9.0.34-1, if your gpu driver does not support this you can try older versions
+    apt-get install -y --allow-downgrades \
+        tensorrt-dev=10.9.0.34-1+cuda12.8 \
+        libnvinfer-dev=10.9.0.34-1+cuda12.8 \
+        libnvinfer-lean-dev=10.9.0.34-1+cuda12.8 \
+        libnvinfer-dispatch-dev=10.9.0.34-1+cuda12.8 \
+        libnvinfer-plugin-dev=10.9.0.34-1+cuda12.8 \
+        libnvinfer-vc-plugin-dev=10.9.0.34-1+cuda12.8 \
+        libnvonnxparsers-dev=10.9.0.34-1+cuda12.8 \
+        libnvinfer-headers-dev=10.9.0.34-1+cuda12.8 \
+        libnvinfer-headers-plugin-dev=10.9.0.34-1+cuda12.8 \
+        libnvinfer10=10.9.0.34-1+cuda12.8 \
+        libnvinfer-dispatch10=10.9.0.34-1+cuda12.8 \
+        libnvinfer-lean10=10.9.0.34-1+cuda12.8 \
+        libnvinfer-plugin10=10.9.0.34-1+cuda12.8 \
+        libnvinfer-vc-plugin10=10.9.0.34-1+cuda12.8 \
+        libnvonnxparsers10=10.9.0.34-1+cuda12.8
+
+    # Pin to prevent upgrade
+    cat > /etc/apt/preferences.d/tensorrt <<'EOF'
+    Package: tensorrt-dev libnvinfer* libnvonnxparsers*
+    Pin: version 10.9.0.34-1+cuda12.8
+    Pin-Priority: 1001
+    EOF
+
+    # Clean up to reduce image size
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+%environment
+    # Set environment variables if needed
+    export LC_ALL=C
+    export LANG=C
+    
+    # Prepend the standard CUDA library path to LD_LIBRARY_PATH
+    # Use 'export' and handle potential existing value
+    export LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
+    # You might also need to ensure CUDA bin is definitely first in PATH
+    export PATH="/usr/local/cuda/bin:${PATH}"
+
+%runscript
+    # Default command: open an interactive shell.
+    exec /bin/bash "$@"

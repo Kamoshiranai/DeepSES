@@ -473,7 +473,7 @@ int main()
     // const std::string CACHE_FILENAME = "calibration.cache";
 
     // Define file paths
-    const char* modelFile = "../../data/engines/unet_4_ch_1-2-4_mults_10_06_25.onnx";  // Path to your ONNX model file
+    const char* modelFile = "../../data/models/unet_4_ch_1-2-4_mults_10_06_25.onnx";  // Path to your ONNX model file
     
     const char* engineFile = "../../data/engines/unet_4_ch_1-2-4_mults_10_06_25_FP16.trt";  // Path where the engine will be saved
 
