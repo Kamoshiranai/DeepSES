@@ -97,7 +97,28 @@ python learn.py
 
 ### Singularity Container
 
-The C++ execution code is designed to run inside a Singularity container. The `.def` file is included for building the container.
+The C++ execution code is designed to run inside a Singularity container. The definition file [tensorrt+opengl.def](run/tensorrt+opengl.def) can be used to build the container.  
+
+### Adapting the definition file to your system
+As a base image we used a [container](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tensorrt?version=25.09-py3) provided by nvidia that comes with CUDA-Toolkit version 12.8 and TensorRT version 10.9 pre-installed and we simply add the OpenGL dependencies we need.   
+Depending on your gpu driver version it might be neccessary to choose a different base image that comes with a newer/older Toolkit version.
+
+1. Check version compatibility of you gpu driver with CUDA-Toolkit versions [here](https://docs.nvidia.com/deploy/cuda-compatibility/index.html).
+
+2.  a) If you driver is supported by Toolkit version 12.8, smile and skipt to the next section.
+
+    b) If your driver is only supported by newer Toolkit versions, check this [support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html) for which base image you need and change the first line in [tensorrt+opengl.def](run/tensorrt+opengl.def) accordingly.
+
+    c) If you driver is only supported by older Toolkit versions, you have two options you can try:
+
+    1. Use an older version of TensorRT:    
+    Check this [support matrix](https://docs.nvidia.com/deeplearning/frameworks/support-matrix/index.html) for what is the newest base image you can use with your driver and change the first line in [tensorrt+opengl.def](run/tensorrt+opengl.def) accordingly.    
+    Note that the API of TensorRT might be different for older versions and some features might be not supported.
+
+    2. Use a different base image to combine an older Toolkit version with TensorRT version 10.9.   
+    This repo also includes a definition file [custom_tensorrt+opengl.def](run/custom_tensorrt+opengl.def) where you can combine a chosen Toolkit version with a chosen TensorRT version.   
+    To do so you have to change the corresponding versions in the lines marked with "#NOTE".    
+    This tool was implemented and tested with TensorRT version 10.9 but an older version might also work. [This page](https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/) might be helpful.
 
 ### Building and Running
 
@@ -105,7 +126,7 @@ The C++ execution code is designed to run inside a Singularity container. The `.
 
 ```bash
 cd run
-sudo singularity build deepses.sif deepses.def
+sudo singularity build deepses.sif tensorrt+opengl.def
 ```
 
 2. Run the container:

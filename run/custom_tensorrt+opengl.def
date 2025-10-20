@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: nvidia/cuda:12.1.1-devel-ubuntu22.04 #NOTE: set to cuda version compatible with your gpu driver
+From: nvidia/cuda:12.1.1-devel-ubuntu22.04 #NOTE: set to CUDA-Toolkit version compatible with your gpu driver
 
 %labels
     Author Niklas Merk
@@ -65,7 +65,7 @@ From: nvidia/cuda:12.1.1-devel-ubuntu22.04 #NOTE: set to cuda version compatible
     apt-get install -y vim wget jq curl
 
     # Now install specific TensorRT packages (force downgrades allowed)
-    # NOTE: DeepSES was tested with tensorrt version 10.9.0.34-1, if your gpu driver does not support this you can try older versions
+    # NOTE: DeepSES was tested with tensorrt version 10.9.0.34-1, if your gpu driver or Toolkit version does not support this you can try older versions
     apt-get install -y --allow-downgrades \
         tensorrt-dev=10.9.0.34-1+cuda12.8 \
         libnvinfer-dev=10.9.0.34-1+cuda12.8 \
