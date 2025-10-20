@@ -117,8 +117,8 @@ Depending on your gpu driver version it might be neccessary to choose a differen
 
     2. Use a different base image to combine an older Toolkit version with TensorRT version 10.9.   
     This repo also includes a definition file [custom_tensorrt+opengl.def](run/custom_tensorrt+opengl.def) where you can combine a chosen Toolkit version with a chosen TensorRT version.   
-    To do so you have to change the corresponding versions in the lines marked with "#NOTE".    
-    This tool was implemented and tested with TensorRT version 10.9 but an older version might also work. [This page](https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/) might be helpful.
+    To do so you have to change the corresponding versions in the lines marked with "#NOTE". [This page](https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/) might be helpful.   
+    This tool was implemented and tested with TensorRT version 10.9 but an older version might also work. 
 
 ### Building and Running
 
