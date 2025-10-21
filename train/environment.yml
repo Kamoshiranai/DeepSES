@@ -1,4 +1,4 @@
-name: deepses_release
+name: deepses
 channels:
   - conda-forge
   - defaults
