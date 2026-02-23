@@ -770,7 +770,7 @@ int main(int argc, char *argv[]) {
   // printf("Max image bindings: %d\n", maxImageUnits);
 
   // Textures to hold the information for the final shading
-  GLuint tex_pos, tex_normal, tex_color, tex_ao;
+  GLuint tex_pos, tex_normal; //, tex_color, tex_ao;
   glGenTextures(1, &tex_pos);
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, tex_pos);
@@ -793,27 +793,27 @@ int main(int argc, char *argv[]) {
                GL_FLOAT, NULL);
   glBindImageTexture(2, tex_normal, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-  glGenTextures(1, &tex_color);
-  glActiveTexture(GL_TEXTURE3);
-  glBindTexture(GL_TEXTURE_2D, tex_color);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA,
-               GL_FLOAT, NULL);
-  glBindImageTexture(3, tex_color, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+  // glGenTextures(1, &tex_color);
+  // glActiveTexture(GL_TEXTURE3);
+  // glBindTexture(GL_TEXTURE_2D, tex_color);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA,
+  //              GL_FLOAT, NULL);
+  // glBindImageTexture(3, tex_color, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-  glGenTextures(1, &tex_ao);
-  glActiveTexture(GL_TEXTURE4);
-  glBindTexture(GL_TEXTURE_2D, tex_ao);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RED,
-               GL_FLOAT, NULL);
-  glBindImageTexture(4, tex_ao, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+  // glGenTextures(1, &tex_ao);
+  // glActiveTexture(GL_TEXTURE4);
+  // glBindTexture(GL_TEXTURE_2D, tex_ao);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  // glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RED,
+  //              GL_FLOAT, NULL);
+  // glBindImageTexture(4, tex_ao, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
   // 3D Texture for the distance field stores color of the closest atom and
   // distance to surface
@@ -839,12 +839,13 @@ int main(int argc, char *argv[]) {
   cShader neighbors_shader("shaders/neighbors.cs");
   // Calculate vdw
   cShader phase1_shader("shaders/phase1_vdw.cs");
-  // Calculate color, position, and normals
-  cShader raymarch_shader("shaders/raymarch-molecule_no_color.cs");
-  // Ambient Occlusion
-  cShader ao_shader("shaders/sdf_hemispherical_ao.cs");
+  //NOTE: instead do raymarching and ao in fragment shader
+  // // Calculate color, position, and normals
+  // cShader raymarch_shader("shaders/raymarch-molecule_no_color.cs");
+  // // Ambient Occlusion
+  // cShader ao_shader("shaders/sdf_hemispherical_ao.cs");
   // Shading
-  Shader phong_shader("shaders/passthrough.vs", "shaders/phong_with_ao.fs");
+  Shader raymarch_shader("shaders/passthrough.vs", "shaders/raymarch_noisy_sdf_with_ao.fs");
 
   neighbors_shader.use();
   // Size of the neighbors grid
@@ -1043,7 +1044,7 @@ int main(int argc, char *argv[]) {
   //NOTE we usually dont need all 8^3 patches to fit in the buffer, so we can save some memory by making it smaller
   #ifdef _WIN32
     if (patches_per_dim == 6) {
-      compact_buffer_voxels = (long long)160 * patchVoxels;
+      compact_buffer_voxels = (long long)216 * patchVoxels; //160
     }
     if (patches_per_dim == 8) { //NOTE: can be optimized but is enough for 25 patches per dim with 24 GB VRAM
       compact_buffer_voxels = (long long)512 * patchVoxels; //350
@@ -1078,27 +1079,27 @@ int main(int argc, char *argv[]) {
   double lastTime = glfwGetTime();
   int nbFrames = 0;
   raymarch_shader.use();
-  raymarch_shader.setInt("num_atoms", num_atoms);
-  raymarch_shader.setFloat("r_probe", r_probe);
-
+  // raymarch_shader.setInt("num_atoms", num_atoms);
+  // raymarch_shader.setFloat("r_probe", r_probe);
+  
   raymarch_shader.setVec3("dims", dim_grid);
   raymarch_shader.setFloat("grid_res", resolution);
 
-  ao_shader.use();
-  ao_shader.setVec3("dims", dim_grid);
-  ao_shader.setFloat("grid_res", resolution);
-  ao_shader.setInt("tex_pos", 1);
-  ao_shader.setInt("tex_normal", 2);
-  ao_shader.setInt("tex_sdf", 0);
-  ao_shader.setBool("sdf_in_r_component", true);
+  // ao_shader.use();
+  // ao_shader.setVec3("dims", dim_grid);
+  // ao_shader.setFloat("grid_res", resolution);
+  // ao_shader.setInt("tex_pos", 1);
+  // ao_shader.setInt("tex_normal", 2);
+  // ao_shader.setInt("tex_sdf", 0);
+  // ao_shader.setBool("sdf_in_r_component", true);
 
-  phong_shader.use();
-  phong_shader.setBool("bool_uniform_color", bool_uniform_color);
-  phong_shader.setInt("tex_pos", 1); 
-  phong_shader.setInt("tex_normal", 2);
-  phong_shader.setInt("tex_color", 3);
-  phong_shader.setInt("tex_ao", 4);
-  phong_shader.setVec3("uniform_color", uniform_color);
+  // phong_shader.use();
+  // phong_shader.setBool("bool_uniform_color", bool_uniform_color);
+  // phong_shader.setInt("tex_pos", 1); 
+  // phong_shader.setInt("tex_normal", 2);
+  // phong_shader.setInt("tex_color", 3);
+  // phong_shader.setInt("tex_ao", 4);
+  // phong_shader.setVec3("uniform_color", uniform_color);
 
   // field width from chimerax needs to be halfed
   w *= 0.5;
@@ -1689,36 +1690,18 @@ int main(int argc, char *argv[]) {
       }
 
       // ------------------------------------------------------------------------------
-      // Raymarch the SDF
+      // Raymarch the SDF, Compute Ambient Occlusion, lighting pass and render to screen
       // ------------------------------------------------------------------------------
+      glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       raymarch_shader.use();
       raymarch_shader.setMat4("view", view);
       raymarch_shader.setMat4("projection", projection);
       raymarch_shader.setVec3("camera_pos", camera_pos);
       raymarch_shader.setVec3("camera_front", camera_front);
       raymarch_shader.setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
-
-      glDispatchCompute((GLuint)SCR_WIDTH / 4, (GLuint)SCR_HEIGHT / 4, 1);
-      glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-      // ------------------------------------------------------------------------------
-      // Compute Ambient Occlusion
-      // ------------------------------------------------------------------------------
-      ao_shader.use();
-      ao_shader.setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
-
-      glDispatchCompute((GLuint)SCR_WIDTH / 4, (GLuint)SCR_HEIGHT / 4, 1);
-      glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-      // ------------------------------------------------------------------------------
-      // Lighting Pass, render to screen
-      // ------------------------------------------------------------------------------
-      glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      phong_shader.use();
-      phong_shader.setVec3("camera_pos", camera_pos);
       glDrawArrays(GL_TRIANGLES, 0, 6);
       glDisable(GL_BLEND);
 
