@@ -829,6 +829,32 @@ int main(int argc, char *argv[]) {
   glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, dim_grid.x, dim_grid.y, dim_grid.z, 0, GL_RED, GL_FLOAT, NULL);
   glBindImageTexture(0, tex_dist_field, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 
+  // B-factor
+  GLuint tex_b_factor;
+  glGenTextures(1, &tex_b_factor);
+  glActiveTexture(GL_TEXTURE3);
+  glBindTexture(GL_TEXTURE_3D, tex_b_factor);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, dim_grid.x, dim_grid.y, dim_grid.z, 0, GL_RED, GL_FLOAT, NULL);
+  glBindImageTexture(3, tex_b_factor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F); //TODO how to choose?
+
+  // atom color
+  GLuint tex_atom_color;
+  glGenTextures(1, &tex_atom_color);
+  glActiveTexture(GL_TEXTURE4);
+  glBindTexture(GL_TEXTURE_3D, tex_atom_color);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, dim_grid.x, dim_grid.y, dim_grid.z, 0, GL_RGBA, GL_FLOAT, NULL);
+  glBindImageTexture(4, tex_atom_color, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F); //TODO how to choose?
+
   checkGLError("create textures");
 
   // ------------------------------------------------------------------------------
@@ -1043,21 +1069,21 @@ int main(int argc, char *argv[]) {
   long long compact_buffer_voxels = (long long)batchDim * patchVoxels;
   //NOTE we usually dont need all 8^3 patches to fit in the buffer, so we can save some memory by making it smaller
   #ifdef _WIN32
-    if (patches_per_dim == 6) {
-      compact_buffer_voxels = (long long)216 * patchVoxels; //160
-    }
-    if (patches_per_dim == 8) { //NOTE: can be optimized but is enough for 25 patches per dim with 24 GB VRAM
-      compact_buffer_voxels = (long long)512 * patchVoxels; //350
-    }
-    if (patches_per_dim == 10) {
-      compact_buffer_voxels = (long long)500 * patchVoxels;
-    }
-    if (patches_per_dim == 12) {
-      compact_buffer_voxels = (long long)700 * patchVoxels;
-    }
-    if (patches_per_dim == 14) {
-      compact_buffer_voxels = (long long)800 * patchVoxels;
-    }
+    // if (patches_per_dim == 6) {
+    //   compact_buffer_voxels = (long long)160 * patchVoxels;
+    // }
+    // if (patches_per_dim == 8) { //NOTE: can be optimized but is enough for 25 patches per dim with 24 GB VRAM
+    //   compact_buffer_voxels = (long long)350 * patchVoxels;
+    // }
+    // if (patches_per_dim == 10) {
+    //   compact_buffer_voxels = (long long)500 * patchVoxels;
+    // }
+    // if (patches_per_dim == 12) {
+    //   compact_buffer_voxels = (long long)700 * patchVoxels;
+    // }
+    // if (patches_per_dim == 14) {
+    //   compact_buffer_voxels = (long long)800 * patchVoxels;
+    // }
   #else
     if (patches_per_dim > 8) { //NOTE: can be optimized but is enough for 25 patches per dim with 24 GB VRAM
       compact_buffer_voxels /= 2;
@@ -1775,4 +1801,4 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
   camera_changed = true;
 }
 
-// cd .. & cmake --build . --config x64-Debug & cd apps & interactive-deepses_with_ao.exe C:\Users\niklas\source\repos\sdf\data\pdb\100-500\1OMK.cif.gz 8
+// cd .. & cmake --build . --config x64-Debug & cd apps & interactive-deepses_with_ao.exe C:\Users\niklas\source\repos\sdf\data\pdb\100-500\1OMK.cif.gz 4

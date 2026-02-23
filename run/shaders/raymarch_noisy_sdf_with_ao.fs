@@ -6,6 +6,8 @@ in vec2 TexCoords; //NOTE: passthrough.vs returns values in [-1,1]
 out vec4 fragColor;
 
 layout(binding = 0) uniform sampler3D grid; // sdf values
+layout(binding = 3) uniform sampler3D b_factor_grid; 
+layout(binding = 4) uniform sampler3D atom_color_grid;
 const vec3 OBJECT_COLOR = vec3(0.79); // gamma corrected 0.9
 uniform mat4 view;
 uniform mat4 projection;
@@ -44,9 +46,8 @@ vec3 getWorldPosfromScreenPos(vec2 screenPos) {
 }
 
 // Calculate normal via central differences (6 texture look ups)
-vec3 calculateNormal(vec3 pos, vec3 noiseGradient) {
+vec3 calculateNormal(vec3 coords_grid, vec3 noiseGradient) {
 
-  vec3 coords_grid = pos_in_grid(pos, dims);
   vec3 epsilon_vec = vec3(1.0f / dims.x, 0.0, 0.0);
 
   float gradient_x = texture(grid, coords_grid + epsilon_vec.xyy).x -
@@ -503,10 +504,15 @@ void main() {
   float diffuse = 0.0;
 
   if (hit) {
-    vec3 normal = calculateNormal(pos, noiseGradient);
+    vec3 coords_grid = pos_in_grid(pos, dims);
+    float b_factor = texture(b_factor_grid, coords_grid).x;
+    vec3 atom_color = texture(atom_color_grid, coords_grid).xyz;
+    vec3 normal = calculateNormal(coords_grid, noiseGradient);
     diffuse = calculateDiffuse(pos, normal, rayOrigin);
     ao = rayTracedAO(pos, normal);
     color = diffuse * 0.8 * OBJECT_COLOR + 0.2 * ao * OBJECT_COLOR; 
+    // color = diffuse * 0.8 * atom_color + 0.2 * ao * atom_color; 
+    // color = vec3(b_factor);
   }
   // gamma
   color = pow(color, vec3(0.4545));
