@@ -918,7 +918,7 @@ int main(int argc, char *argv[]) {
   // build TensorRT engine
   nvinfer1::IRuntime* runtime = nvinfer1::createInferRuntime(logger);
   // open model from file
-  const std::string enginePath = "../../data/engines/unet_4_ch_1-2-4_mults_10_06_25_FP16.trt";
+  const std::string enginePath = "C:\\Users\\niklas\\source\\repos\\noiseSES\\run\\data\\engines\\unet_4_ch_1-2-4_mults_10_06_25_FP16.trt"; //"../../data/engines/unet_4_ch_1-2-4_mults_10_06_25_FP16.trt";
 
   std::ifstream file(enginePath, std::ios::binary);
 
@@ -1046,7 +1046,7 @@ int main(int argc, char *argv[]) {
       compact_buffer_voxels = (long long)160 * patchVoxels;
     }
     if (patches_per_dim == 8) { //NOTE: can be optimized but is enough for 25 patches per dim with 24 GB VRAM
-      compact_buffer_voxels = (long long)350 * patchVoxels;
+      compact_buffer_voxels = (long long)512 * patchVoxels; //350
     }
     if (patches_per_dim == 10) {
       compact_buffer_voxels = (long long)500 * patchVoxels;
@@ -1515,10 +1515,10 @@ int main(int argc, char *argv[]) {
         // Record START event for CUDA operations
         checkCudaErrors(cudaEventRecord(cudaStartEvents_raymarch[writeIndex], stream));
 
-        launchRaymarchAndCheckRangeKernel(raymarchParams, sdf_min, sdf_max, epsilon, blocksRaymarchKernel, threadsRaymarchKernel, stream);
+        // launchRaymarchAndCheckRangeKernel(raymarchParams, sdf_min, sdf_max, epsilon, blocksRaymarchKernel, threadsRaymarchKernel, stream);
         //NOTE: no raymarching filter, only range check
         // Can also be used to calculate the sdf once and then keep fixed (set model_changed to false), if your molecule does not change
-        // launchCheckRangeKernel(raymarchParams, sdf_min, sdf_max, epsilon, blocksCheckRangeKernel, threadsCheckRangeKernel, stream);
+        launchCheckRangeKernel(raymarchParams, sdf_min, sdf_max, epsilon, blocksCheckRangeKernel, threadsCheckRangeKernel, stream);
 
         // NOTE: can use this instead to set all patches to 1 (relevant)
         // dim3 blocks(patches_per_dim);
@@ -1685,7 +1685,7 @@ int main(int argc, char *argv[]) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_3D, tex_dist_field);
 
-        model_changed = true; //NOTE: if set to 'false' do not recompute sdf for next frame
+        model_changed = false; //NOTE: if set to 'false' do not recompute sdf for next frame
       }
 
       // ------------------------------------------------------------------------------
@@ -1791,3 +1791,5 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
   camera.setRadius(camera.getRadius() + 4.0 * yoffset);
   camera_changed = true;
 }
+
+// cd .. & cmake --build . --config x64-Debug & cd apps & interactive-deepses_with_ao.exe C:\Users\niklas\source\repos\sdf\data\pdb\100-500\1OMK.cif.gz 8

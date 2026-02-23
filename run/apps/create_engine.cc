@@ -473,9 +473,9 @@ int main()
     // const std::string CACHE_FILENAME = "calibration.cache";
 
     // Define file paths
-    const char* modelFile = "../../data/models/unet_4_ch_1-2-4_mults_10_06_25.onnx";  // Path to your ONNX model file
+    const char* modelFile = "C:\\Users\\niklas\\source\\repos\\noiseSES\\run\\data\\models\\unet_8_ch_1-2-4-4_mults_02_06_25.onnx"; // "../../data/models/unet_4_ch_1-2-4_mults_10_06_25.onnx";  // Path to your ONNX model file
     
-    const char* engineFile = "../../data/engines/unet_4_ch_1-2-4_mults_10_06_25_FP16.trt";  // Path where the engine will be saved
+    const char* engineFile = "C:\\Users\\niklas\\source\\repos\\noiseSES\\run\\data\\engines\\unet_4_ch_1-2-4_mults_10_06_25_FP16.trt"; // ../../data/engines/unet_4_ch_1-2-4_mults_10_06_25_FP16.trt";  // Path where the engine will be saved
 
     // set optimal/max batch size
     const int BATCH_SIZE = 64;

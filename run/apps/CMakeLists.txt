@@ -39,8 +39,8 @@ if(WIN32)
     target_include_directories(interactive-deepses_with_ao PRIVATE ../include ${CUDA_INCLUDE_DIRS} ${TensorRT_INCLUDE_DIR})
 
     add_executable(interactive-vdw interactive-vdw.cc)
-    target_compile_features(vdw PRIVATE cxx_std_17)
-    # target_compile_features(vdw PRIVATE cxx_std_11)
+    target_compile_features(interactive-vdw PRIVATE cxx_std_17)
+    # target_compile_features(interactive-vdw PRIVATE cxx_std_11)
 
     target_link_libraries(interactive-vdw PRIVATE glfw glad glm gemmi::gemmi_cpp ZLIB::ZLIB ${HDF5_LIBRARIES})
     target_include_directories(interactive-vdw PRIVATE ../include)
@@ -54,7 +54,7 @@ if(WIN32)
 
     add_dependencies(interactive-deepses copy_shaders)
     add_dependencies(interactive-deepses_with_ao copy_shaders)
-    add_dependencies(interactive-hermosilla_method copy_shaders)
+    add_dependencies(interactive-hermosilla-method copy_shaders)
     add_dependencies(interactive-vdw copy_shaders)
 
 else()
