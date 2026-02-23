@@ -1,6 +1,6 @@
 build/*
 build-old/*
-out/*
+run/out/*
 apps/out/*
 *.h5
 CMakeSettings.json
