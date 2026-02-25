@@ -499,12 +499,12 @@ glm::vec3 get_arcball_vector(int x, int y);
 // settings
 
 // Orthographic cameras field width chimerax (use camera command to show)
-float w = 100.59;
+float w; // = 100.59; //NOTE for chimeraX
 
 // Scr_WIDTH and HEIGHT need to be doubled from the chimerax values (command
 // (window size))
-unsigned int SCR_WIDTH = 1920;
-unsigned int SCR_HEIGHT = 1080;
+unsigned int SCR_WIDTH = 1920 / 2;
+unsigned int SCR_HEIGHT = 1080 / 2;
 
 // view matrix from chimerax (command 'view matrix' under view matrix camera)
 bool setView = false;
@@ -512,7 +512,7 @@ float view_arr[12] = {0.2879,   0.92166, 0.26011,  23.992,  0.66501,  0.0030433,
                       -0.74683, -75.643, -0.68911, 0.38799, -0.61204, -55.885};
 
 arcBallCamera camera(SCR_WIDTH, SCR_HEIGHT);
-float zoom = 45.0f;
+// float zoom = 45.0f;
 float r_probe = 1.4;
 bool all_atoms = true; // Should all atoms be considered for the surface?
 int num_atoms = 100;   // If not all atoms: maximum number of atoms considered
@@ -600,7 +600,7 @@ int main(int argc, char *argv[]) {
 
   // Compute extents of the molecule for creating the grids
   float scale_model = std::max(std::max(xlength, ylength), zlength);
-  scale_model += Coords.LargestVdwRadius() * 2 + r_probe * 2;
+  scale_model += Coords.LargestVdwRadius() * 2 + r_probe * 2 + r_probe; //NOTE: added some extra space to avoid artifacts
   glm::vec3 dim_grid_prelim = glm::vec3(scale_model, scale_model, scale_model);
 
   const int voxels_per_patch_dim = 64;
@@ -635,8 +635,10 @@ int main(int argc, char *argv[]) {
   // ------------------------------------------------------------------------------
 
   //  This is the distance to the center of the molecule in which the camera
-  //  be placed
-  camera.setRadius(scale_model * 1.5);
+  //  is placed
+  camera.setRadius(scale_model); //NOTE: camera radius is in world space units (Angstrom)
+  // is set to scale_model / 2, scale_model now corresponds to SCREEN_WIDTH, 
+  // as we later set the orthog. proj. matrix to (-camera.getRadius(), camera.getRadius(), ...)
 
   // Put the model at the scene origin
   glm::mat4 model = glm::mat4(1.0f);
@@ -1110,6 +1112,7 @@ int main(int argc, char *argv[]) {
   
   raymarch_shader.setVec3("dims", dim_grid);
   raymarch_shader.setFloat("grid_res", resolution);
+  raymarch_shader.setFloat("screen_res", camera.getRadius() / SCR_WIDTH);
 
   // ao_shader.use();
   // ao_shader.setVec3("dims", dim_grid);
@@ -1128,7 +1131,7 @@ int main(int argc, char *argv[]) {
   // phong_shader.setVec3("uniform_color", uniform_color);
 
   // field width from chimerax needs to be halfed
-  w *= 0.5;
+  // w *= 0.5; // NOTE: chimeraX
 
   // Use high_resolution_clock for potentially better precision
   using Clock = std::chrono::high_resolution_clock;
@@ -1390,13 +1393,14 @@ int main(int argc, char *argv[]) {
     if (!setView) {
       view = camera.GetViewMatrix();
       camera_pos = camera.getPosition();
-      w = camera.getRadius() * 0.5f;
+      w = camera.getRadius(); // * 0.5f; //NOTE for chimeraX
       camera_front = glm::normalize(camera.getFront());
     }
 
     float aspect = (float)SCR_WIDTH / SCR_HEIGHT;
     glm::mat4 projection =
-        glm::ortho(-w, w, -w / aspect, w / aspect, -200.0f, 200.0f);
+        // glm::ortho(-w, w, -w / aspect, w / aspect, -200.0f, 200.0f);
+        glm::ortho(-w, w, -w / aspect, w / aspect, -scale_model/ 2, scale_model / 2);
 
     if (camera_changed) {
       if (model_changed) {
@@ -1728,6 +1732,7 @@ int main(int argc, char *argv[]) {
       raymarch_shader.setVec3("camera_pos", camera_pos);
       raymarch_shader.setVec3("camera_front", camera_front);
       raymarch_shader.setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
+      raymarch_shader.setFloat("screen_res", camera.getRadius() / SCR_WIDTH);
       glDrawArrays(GL_TRIANGLES, 0, 6);
       glDisable(GL_BLEND);
 

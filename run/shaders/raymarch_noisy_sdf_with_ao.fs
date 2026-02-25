@@ -15,10 +15,23 @@ uniform vec3 camera_pos;
 uniform vec3 camera_front;
 uniform vec2 resolution;
 uniform vec3 dims;
-uniform float grid_res;
+uniform float grid_res; // world space size (Angstrom) of one voxel
+uniform float screen_res; // world space size of one pixel, in A / px
 
-const float amplitude = 0.0; //TODO
-const float frequency = 1.0; //TODO
+//NOTE: amplitude values are specified in a range of [0,1] which is reparametrized, s.t. the distances are perceptually uniform.
+// We pass those values through a sigmoid (reparam.) and then through a linear transform mapping the values to the range [0.002, 0.14].
+// Next we multiply by 250px to obtain the screen size. The corresponding world space size can be calculated by multiplying with the screen_res (A / px)
+const float baseAmplitudePx = 250.0;
+const float maxAmplitudeWorldUnits = 0.14 * baseAmplitudePx * screen_res;
+//NOTE: frequency values are specified in a range of [0,1] which is reparametrized, s.t. the distances are perceptually uniform.
+// We pass those values through a sigmoid (reparam.) and then through a linear transform mapping the values to the range [4, 25].
+// Next we multiply by 1/250px to obtain the frequency in terms of screen size. The corresponding world space size can be calculated by dividing with the screen_res (A / px)
+const float baseFrequencyPx = 1.0 / 250; 
+
+const bool varyAmplitude = true; //NOTE: vary amplitude OR frequency //TODO would be nice to switch this on key press
+float amplitudeWorldUnits;
+float frequencyWorldUnits;
+const float uncertainty = 1.0;
 
 const float tilt = radians(93.2);
 const float slant = radians(33.9);
@@ -33,6 +46,34 @@ const float PI = 3.14159265359;
 const float MIN_STEP_SIZE = grid_res / 10; //TODO
 const float SCALE_STEP_SIZE = 0.1;
 const int MAX_STEPS = 1500;
+
+float sigmoid(float a, float b, float x) {
+  return 1.0 / (1.0 + (1.0/a - 1.0) * pow(1.0/x - 1.0, b));
+}
+
+// reparametrization of frequency
+float perceptualFrequencyToWorldUnits(float freqPerceptual) {
+  // 1. perceptual frequencies are given in [0,1] and reparametrized using a fitted sigmoid
+  // 2. map to range [4, 25]
+  // 3. map to px 
+  // 4. map to World units
+  return sigmoid(0.2030, 0.9180, freqPerceptual)
+  * (25. - 4.) + 4.
+  * baseFrequencyPx 
+  / screen_res; //FIXME: should this not be "/ screen res"?
+}
+
+// reparametrization of amplitude
+float perceptualAmplitudeToWorldUnits(float amplitudePerceptual) {
+  // 1. perceptual amplitudes are given in [0,1] and reparametrized using a fitted sigmoid
+  // 2. map to range [0.002, 0.14]
+  // 3. map to px 
+  // 4. map to World units
+  return sigmoid(0.1441, 1.188, amplitudePerceptual)
+  * (0.14 - 0.002) + 0.002
+  * baseAmplitudePx 
+  * screen_res;
+}
 
 // From global space (molecule space) to sdf grid space
 vec3 pos_in_grid(vec3 pos, vec3 dims) {
@@ -437,8 +478,7 @@ float rayTracedAO(vec3 pos, vec3 normal) {
 // ------------------------------------------------------------------------------------
 
 // Add noise to distance value
-// TODO how to choose frequency, amplitude and uncertainty?
-float addNoise(vec3 pos, float uncertainty, out vec3 gradient) {
+float addNoise(vec3 pos, float frequency, float amplitude, float uncertainty, out vec3 gradient) {
   float noise;
   vec3 stimulus = vec3(1.0); //TODO
   noise =
@@ -453,7 +493,14 @@ float addNoise(vec3 pos, float uncertainty, out vec3 gradient) {
 float noisySceneSDF(vec3 pos, float uncertainty, out vec3 noiseGradient) {
     vec3 coords_grid = pos_in_grid(pos, dims);
     float dist = texture(grid, coords_grid).x;
-    dist += addNoise(pos, uncertainty, noiseGradient);
+    // modify amplitude / frequency accordint to B-factor
+    float b_factor = texture(b_factor_grid, coords_grid).x;
+    if (varyAmplitude) {
+      amplitudeWorldUnits = perceptualAmplitudeToWorldUnits(b_factor);
+    } else {
+      frequencyWorldUnits = perceptualFrequencyToWorldUnits(b_factor);
+    }
+    dist += addNoise(pos, frequencyWorldUnits, amplitudeWorldUnits, uncertainty, noiseGradient);
     return dist;
 }
 
@@ -467,6 +514,12 @@ float calculateDiffuse(vec3 pos, vec3 normal, vec3 eyePos) {
 }
 
 void main() {
+  if (varyAmplitude) {
+    frequencyWorldUnits = 16.0 * baseFrequencyPx / screen_res;
+  } else {
+    amplitudeWorldUnits = 0.048 * baseAmplitudePx * screen_res;
+  }
+
   // vec3 rayOrigin = vec3(v_uv * vec2(ASPECT, 1.0), CAMERA_DISTANCE); //NOTE: this also would work for orthographic proj.
   vec3 rayOrigin = getWorldPosfromScreenPos(TexCoords);
       // 1.0f * pixel_coords /
@@ -479,7 +532,6 @@ void main() {
   vec3 pos;
   bool hit = false;
   vec3 noiseGradient;
-  float uncertainty = 1.0; //TODO
 
   for (int i = 0; i < MAX_STEPS; i++) {
     pos = rayOrigin + rayDepth * rayDirection;
@@ -488,7 +540,7 @@ void main() {
       hit = true;
       break;
     }
-    if (dist < EPSILON + 1.5 * amplitude) {
+    if (dist < EPSILON + 1.5 * maxAmplitudeWorldUnits) { //TODO is this right? 
       dist *= SCALE_STEP_SIZE;
       dist = max(dist, MIN_STEP_SIZE);
     }
@@ -505,8 +557,8 @@ void main() {
 
   if (hit) {
     vec3 coords_grid = pos_in_grid(pos, dims);
-    float b_factor = texture(b_factor_grid, coords_grid).x;
-    vec3 atom_color = texture(atom_color_grid, coords_grid).xyz;
+    // float b_factor = texture(b_factor_grid, coords_grid).x;
+    // vec3 atom_color = texture(atom_color_grid, coords_grid).xyz;
     vec3 normal = calculateNormal(coords_grid, noiseGradient);
     diffuse = calculateDiffuse(pos, normal, rayOrigin);
     ao = rayTracedAO(pos, normal);
@@ -517,5 +569,5 @@ void main() {
   // gamma
   color = pow(color, vec3(0.4545));
 
-  fragColor = vec4(vec3(color), 1.0);
+  fragColor = vec4(color, 1.0);
 }
