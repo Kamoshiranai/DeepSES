@@ -522,6 +522,7 @@ glm::vec3 uniform_color = glm::vec3(26, 41, 88) / 100.0f; // blue
 // glm::vec3 uniform_color = glm::vec3(1.0, 0.5, 0.0); // orange
 
 bool camera_changed = true;
+bool varyAmplitude = true;
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -833,7 +834,11 @@ int main(int argc, char *argv[]) {
 
   // B-factor
   GLuint tex_b_factor;
+  const int voxels_per_dim_b_factor = 8 * 64; //TODO
+  const float resolution_b_factor = scale_model / voxels_per_dim_b_factor;
+  const glm::ivec3 dim_grid_b_factor = glm::ivec3(voxels_per_dim_b_factor);
   glGenTextures(1, &tex_b_factor);
+  // Bind texture to sampler binding 3
   glActiveTexture(GL_TEXTURE3);
   glBindTexture(GL_TEXTURE_3D, tex_b_factor);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -841,8 +846,22 @@ int main(int argc, char *argv[]) {
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, dim_grid.x, dim_grid.y, dim_grid.z, 0, GL_RED, GL_FLOAT, NULL);
+  glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, dim_grid_b_factor.x, dim_grid_b_factor.y, dim_grid_b_factor.z, 0, GL_RED, GL_FLOAT, NULL);
+  // bind texture to image binding 3
   glBindImageTexture(3, tex_b_factor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F); //TODO how to choose?
+
+  // // smoothed B-factor
+  // GLuint tex_smooth_b_factor;
+  // glGenTextures(1, &tex_smooth_b_factor);
+  // glActiveTexture(GL_TEXTURE5);
+  // glBindTexture(GL_TEXTURE_3D, tex_smooth_b_factor);
+  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  // glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, dim_grid_b_factor.x, dim_grid_b_factor.y, dim_grid_b_factor.z, 0, GL_RED, GL_FLOAT, NULL);
+  // glBindImageTexture(5, tex_smooth_b_factor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F); //TODO how to choose?
 
   // atom color
   GLuint tex_atom_color;
@@ -867,12 +886,9 @@ int main(int argc, char *argv[]) {
   cShader neighbors_shader("shaders/neighbors.cs");
   // Calculate vdw
   cShader phase1_shader("shaders/phase1_vdw.cs");
-  //NOTE: instead do raymarching and ao in fragment shader
-  // // Calculate color, position, and normals
-  // cShader raymarch_shader("shaders/raymarch-molecule_no_color.cs");
-  // // Ambient Occlusion
-  // cShader ao_shader("shaders/sdf_hemispherical_ao.cs");
-  // Shading
+  cShader phase1_b_factor_shader("shaders/phase1_b_factor.cs");
+  // cShader smooth_b_factor_shader("shaders/smooth_b_factor.cs");
+  //NOTE: do raymarching and ao in fragment shader
   Shader raymarch_shader("shaders/passthrough.vs", "shaders/raymarch_noisy_sdf_with_ao.fs");
 
   neighbors_shader.use();
@@ -890,6 +906,14 @@ int main(int argc, char *argv[]) {
   phase1_shader.setFloat("n_resolution", n_resolution);
   phase1_shader.setVec3("n_dims", n_dim_grid);
   phase1_shader.setInt("cell_size", cell_size);
+
+  phase1_b_factor_shader.use();
+  phase1_b_factor_shader.setFloat("r_probe", r_probe);
+  // Resolution of the sdf grid
+  phase1_b_factor_shader.setFloat("resolution", resolution_b_factor);
+  phase1_b_factor_shader.setFloat("n_resolution", n_resolution);
+  phase1_b_factor_shader.setVec3("n_dims", n_dim_grid);
+  phase1_b_factor_shader.setInt("cell_size", cell_size);
 
   unsigned int quadVAO, quadVBO;
   createQuadBuffers(quadVAO, quadVBO);
@@ -1111,8 +1135,11 @@ int main(int argc, char *argv[]) {
   // raymarch_shader.setFloat("r_probe", r_probe);
   
   raymarch_shader.setVec3("dims", dim_grid);
+  raymarch_shader.setVec3("dims_b_factor", dim_grid_b_factor);
   raymarch_shader.setFloat("grid_res", resolution);
+  raymarch_shader.setFloat("grid_res_b_factor", resolution_b_factor);
   raymarch_shader.setFloat("screen_res", camera.getRadius() / SCR_WIDTH);
+  raymarch_shader.setBool("varyAmplitude", varyAmplitude);
 
   // ao_shader.use();
   // ao_shader.setVec3("dims", dim_grid);
@@ -1400,7 +1427,7 @@ int main(int argc, char *argv[]) {
     float aspect = (float)SCR_WIDTH / SCR_HEIGHT;
     glm::mat4 projection =
         // glm::ortho(-w, w, -w / aspect, w / aspect, -200.0f, 200.0f);
-        glm::ortho(-w, w, -w / aspect, w / aspect, -scale_model/ 2, scale_model / 2);
+        glm::ortho(-w, w, -w / aspect, w / aspect, -scale_model, scale_model);
 
     if (camera_changed) {
       if (model_changed) {
@@ -1430,8 +1457,29 @@ int main(int argc, char *argv[]) {
         glDispatchCompute(dim_grid.x / 8, dim_grid.y / 8, dim_grid.z / 8);
         checkGLError("dispatch compute phase1_shader");
 
+        // B-factor grid of different resolutions
+        phase1_b_factor_shader.use();
+        checkGLError("use phase1_b_factor_shader");
+
+        glDispatchCompute(dim_grid_b_factor.x / 8, dim_grid_b_factor.y / 8, dim_grid_b_factor.z / 8);
+        checkGLError("dispatch compute phase1_b_factor_shader");
+
         glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
-        checkGLError("memory barrier phase1_shader");
+        // This ensures all previous imageStore() calls are visible to subsequent texture() / texelFetch() calls.
+        glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+        checkGLError("memory barrier phase1_b_factor_shader");
+
+        // // smooth B-factor grid
+        // smooth_b_factor_shader.use();
+        // checkGLError("use smooth_b_factor_shader");
+
+        // glDispatchCompute(dim_grid_b_factor.x / 8, dim_grid_b_factor.y / 8, dim_grid_b_factor.z / 8);
+        // checkGLError("dispatch compute smooth_b_factor_shader");
+
+        // // This ensures all previous imageStore() calls are visible to subsequent texture() / texelFetch() calls.
+        // glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+        // glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+        // checkGLError("memory barrier smooth_b_factor_shader");
 
         // ------------------------------------------------------------------------------
         // Reset neighbors buffers to 0 for the next time step
@@ -1733,6 +1781,7 @@ int main(int argc, char *argv[]) {
       raymarch_shader.setVec3("camera_front", camera_front);
       raymarch_shader.setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
       raymarch_shader.setFloat("screen_res", camera.getRadius() / SCR_WIDTH);
+      raymarch_shader.setBool("varyAmplitude", varyAmplitude);
       glDrawArrays(GL_TRIANGLES, 0, 6);
       glDisable(GL_BLEND);
 
@@ -1798,6 +1847,13 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action,
                   int mods) {
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
+  if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+    if (varyAmplitude) {
+      varyAmplitude = false;
+    } else {
+      varyAmplitude = true;
+    }
+  }
 }
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {

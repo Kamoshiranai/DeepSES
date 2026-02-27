@@ -1,9 +1,8 @@
 
 #version 430
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
-layout(r32f, binding = 0) uniform image3D img_dist_field;
-// layout(r32f, binding = 3) uniform image3D img_b_factor;
-layout(rgba32f, binding = 4) uniform image3D img_atom_color;
+layout(r32f, binding = 3) uniform image3D img_b_factor;
+// layout(rgba32f, binding = 4) uniform image3D img_atom_color;
 
 struct atom {
   vec3 coords;
@@ -24,7 +23,7 @@ uniform int cell_size;
 // Size of the neighborhood grid
 uniform vec3 n_dims; // x,y, and z size of the neighborhood grid (how many cells in each dim)
 // Resolution of the neighborhood grid
-uniform float n_resolution; // size in Angstrom?
+uniform float n_resolution; // size of one cell in Angstrom
 
 atom closest;
 
@@ -58,7 +57,7 @@ ivec3 g_coords(vec3 atom_coords, vec3 n_dims, float resolution) {
 
 void main() {
   // Dimensions of the sdf grid
-  vec3 dims = imageSize(img_dist_field);
+  vec3 dims = imageSize(img_b_factor);
   // Coords in sdf grid space
   vec3 pixel_coords = vec3(gl_GlobalInvocationID.xyz);
   //  Calculate the position in molecule/global space
@@ -101,7 +100,6 @@ void main() {
     minimum = -1 * resolution;
   }
 
-  imageStore(img_dist_field, ivec3(pixel_coords), vec4(minimum, 0.0, 0.0, 0.0));
-  // imageStore(img_b_factor, ivec3(pixel_coords), vec4(closest.b_factor, 0.0, 0.0, 0.0));
-  imageStore(img_atom_color, ivec3(pixel_coords), vec4(closest.element_color, 0.0));
+  imageStore(img_b_factor, ivec3(pixel_coords), vec4(closest.b_factor, 0.0, 0.0, 0.0));
+  // imageStore(img_atom_color, ivec3(pixel_coords), vec4(closest.element_color, 0.0));
 }
