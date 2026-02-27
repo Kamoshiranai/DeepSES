@@ -32,6 +32,8 @@ const float maxAmplitudeWorldUnits = 0.14 * baseAmplitudePx * screen_res;
 const float baseFrequencyPx = 1.0 / 250; 
 const float defaultFrequencyWorldUnits = 16.0 * baseFrequencyPx / screen_res;
 const float defaultAmplitudeWorldUnits = 0.048 * baseAmplitudePx * screen_res;
+const bool binBFactor = true;
+const int numBins = 5;
 const float uncertainty = 1.0; // can be used to turn off noise
 
 const float tilt = radians(93.2);
@@ -49,6 +51,11 @@ const float MIN_STEP_SIZE = grid_res / 100; //TODO making this smaller than grid
 const float SCALE_STEP_SIZE = 0.1; //0.1
 const int MAX_STEPS = 5000; // 1500
 
+float bFactorBinning(float b_factor) {
+  float binWidth = 1.0 / numBins;
+  return (floor(b_factor / binWidth) + 0.5) * binWidth; // divide [0,1] in equal-sized bins and map values to center of bin
+}
+
 float sigmoid(float a, float b, float x) {
   x = clamp(x, 0.0001, 0.9999);
   return 1.0 / (1.0 + (1.0/a - 1.0) * pow(1.0/x - 1.0, b));
@@ -56,6 +63,10 @@ float sigmoid(float a, float b, float x) {
 
 // reparametrization of frequency
 float perceptualFrequencyToWorldUnits(float freqPerceptual) {
+  // invert mapping:
+  // freqPerceptual = 1.0 - freqPerceptual;
+  // b-factor binning
+  if (binBFactor) freqPerceptual = bFactorBinning(freqPerceptual);
   // 1. perceptual frequencies are given in [0,1] and reparametrized using a fitted sigmoid
   // 2. map to range [4, 25]
   // 3. map to px 
@@ -68,6 +79,8 @@ float perceptualFrequencyToWorldUnits(float freqPerceptual) {
 
 // reparametrization of amplitude
 float perceptualAmplitudeToWorldUnits(float amplitudePerceptual) {
+  // b-factor binning
+  // if (binBFactor) amplitudePerceptual = bFactorBinning(amplitudePerceptual);
   // 1. perceptual amplitudes are given in [0,1] and reparametrized using a fitted sigmoid
   // 2. map to range [0.002, 0.14]
   // 3. map to px 
