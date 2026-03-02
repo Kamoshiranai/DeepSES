@@ -76,6 +76,7 @@ public:
   glm::vec3 getUp() { return Up; }
   float getRadius() { return Radius; }
   void setPos(int x, int y) { LastPos = glm::vec2(x, y); }
+  void setPos3d(glm::vec3 pos) { Position = pos; }
   void setRadius(float radius) {
     Position += Front * (Radius - radius);
     Radius = radius;

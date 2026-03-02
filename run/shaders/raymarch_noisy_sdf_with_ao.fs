@@ -33,7 +33,7 @@ const float baseFrequencyPx = 1.0 / 250;
 const float defaultFrequencyWorldUnits = 16.0 * baseFrequencyPx / screen_res;
 const float defaultAmplitudeWorldUnits = 0.048 * baseAmplitudePx * screen_res;
 const bool binBFactor = true;
-const int numBins = 5;
+const int numBins = 3;
 const float uncertainty = 1.0; // can be used to turn off noise
 
 const float tilt = radians(93.2);
@@ -535,7 +535,8 @@ void main() {
   vec3 rayDirection = normalize(camera_front);
 
   // --- Raymarching loop ---
-  float rayDepth = 0.0;
+  // float rayDepth = 0.0;
+  float rayDepth = -grid_res * 16; //NOTE: back up a bit to avoid hitting surface to early when zoomed in
   float dist;
   vec3 pos;
   bool hit = false;
@@ -544,7 +545,6 @@ void main() {
   for (int i = 0; i < MAX_STEPS; i++) {
     pos = rayOrigin + rayDepth * rayDirection;
     dist = noisySceneSDF(pos, uncertainty, noiseGradient);
-    // dist = noisySceneSDF(pos, uncertainty, noiseGradient) * 0.5; //TODO
     if (dist < EPSILON) {
       hit = true;
       break;
@@ -570,13 +570,13 @@ void main() {
     vec3 coords_grid = pos_in_grid(pos, dims, grid_res);
     // vec3 coords_grid_b_factor = pos_in_grid(pos, dims_b_factor, grid_res_b_factor);
     // float b_factor = textureLod(b_factor_grid, coords_grid_b_factor, 0.0).x;
-    vec3 atom_color = textureLod(atom_color_grid, coords_grid, 0.0).xyz;
+    // vec3 atom_color = textureLod(atom_color_grid, coords_grid, 0.0).xyz;
     vec3 normal = calculateNormal(coords_grid, noiseGradient);
     diffuse = calculateDiffuse(pos, normal, rayOrigin);
     ao = rayTracedAO(pos, normal);
     color = diffuse * 0.8 * OBJECT_COLOR + 0.2 * ao * OBJECT_COLOR; 
     // color = diffuse * 0.8 * atom_color + 0.2 * ao * atom_color; 
-    // color = vec3(b_factor);
+    // color = vec3(bFactorBinning(b_factor));
   }
   // gamma
   color = pow(color, vec3(0.4545));

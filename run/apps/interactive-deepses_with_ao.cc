@@ -503,8 +503,8 @@ float w; // = 100.59; //NOTE for chimeraX
 
 // Scr_WIDTH and HEIGHT need to be doubled from the chimerax values (command
 // (window size))
-unsigned int SCR_WIDTH = 1920 / 2;
-unsigned int SCR_HEIGHT = 1080 / 2;
+unsigned int SCR_WIDTH = 500;
+unsigned int SCR_HEIGHT = 500;
 
 // view matrix from chimerax (command 'view matrix' under view matrix camera)
 bool setView = false;
@@ -1427,7 +1427,8 @@ int main(int argc, char *argv[]) {
     float aspect = (float)SCR_WIDTH / SCR_HEIGHT;
     glm::mat4 projection =
         // glm::ortho(-w, w, -w / aspect, w / aspect, -200.0f, 200.0f);
-        glm::ortho(-w, w, -w / aspect, w / aspect, -scale_model, scale_model);
+        glm::ortho(-w, w, -w / aspect, w / aspect, -2 * scale_model, 2 * scale_model);
+        // glm::ortho(-scale_model / 2, scale_model / 2, -scale_model / 2 / aspect, scale_model / 2 / aspect, -scale_model, scale_model);
 
     if (camera_changed) {
       if (model_changed) {
@@ -1858,7 +1859,12 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action,
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
   // zoom
+  // NOTE: only change radius (for screen size), not position, to keep camera distance to object
+  // glm::vec3 lastPos = camera.getPosition(); // mod
+  // glm::vec3 front = camera.getFront(); // mod
+  // float lastRadius = camera.getRadius(); // mod
   camera.setRadius(camera.getRadius() + 4.0 * yoffset);
+  // camera.setPos3d(lastPos + glm::vec3(front.x * 4.0 * yoffset, front.y * 4.0 * yoffset, front.z * 4.0 * yoffset)); // mod
   camera_changed = true;
 }
 
