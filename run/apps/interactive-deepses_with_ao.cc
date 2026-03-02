@@ -503,8 +503,8 @@ float w; // = 100.59; //NOTE for chimeraX
 
 // Scr_WIDTH and HEIGHT need to be doubled from the chimerax values (command
 // (window size))
-unsigned int SCR_WIDTH = 500;
-unsigned int SCR_HEIGHT = 500;
+unsigned int SCR_WIDTH = 1000;
+unsigned int SCR_HEIGHT = 1000;
 
 // view matrix from chimerax (command 'view matrix' under view matrix camera)
 bool setView = false;
@@ -523,6 +523,7 @@ glm::vec3 uniform_color = glm::vec3(26, 41, 88) / 100.0f; // blue
 
 bool camera_changed = true;
 bool varyAmplitude = true;
+bool ambientOcclusion = false;
 
 int main(int argc, char *argv[]) {
   if (argc < 3) {
@@ -834,7 +835,7 @@ int main(int argc, char *argv[]) {
 
   // B-factor
   GLuint tex_b_factor;
-  const int voxels_per_dim_b_factor = 8 * 64; //TODO
+  const int voxels_per_dim_b_factor = 12 * 64; //TODO
   const float resolution_b_factor = scale_model / voxels_per_dim_b_factor;
   const glm::ivec3 dim_grid_b_factor = glm::ivec3(voxels_per_dim_b_factor);
   glGenTextures(1, &tex_b_factor);
@@ -850,7 +851,7 @@ int main(int argc, char *argv[]) {
   // bind texture to image binding 3
   glBindImageTexture(3, tex_b_factor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F); //TODO how to choose?
 
-  // // smoothed B-factor
+  // smoothed B-factor
   // GLuint tex_smooth_b_factor;
   // glGenTextures(1, &tex_smooth_b_factor);
   // glActiveTexture(GL_TEXTURE5);
@@ -863,18 +864,18 @@ int main(int argc, char *argv[]) {
   // glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, dim_grid_b_factor.x, dim_grid_b_factor.y, dim_grid_b_factor.z, 0, GL_RED, GL_FLOAT, NULL);
   // glBindImageTexture(5, tex_smooth_b_factor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F); //TODO how to choose?
 
-  // atom color
-  GLuint tex_atom_color;
-  glGenTextures(1, &tex_atom_color);
-  glActiveTexture(GL_TEXTURE4);
-  glBindTexture(GL_TEXTURE_3D, tex_atom_color);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, dim_grid.x, dim_grid.y, dim_grid.z, 0, GL_RGBA, GL_FLOAT, NULL);
-  glBindImageTexture(4, tex_atom_color, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F); //TODO how to choose?
+  // // atom color
+  // GLuint tex_atom_color;
+  // glGenTextures(1, &tex_atom_color);
+  // glActiveTexture(GL_TEXTURE4);
+  // glBindTexture(GL_TEXTURE_3D, tex_atom_color);
+  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+  // glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, dim_grid.x, dim_grid.y, dim_grid.z, 0, GL_RGBA, GL_FLOAT, NULL);
+  // glBindImageTexture(4, tex_atom_color, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F); //TODO how to choose?
 
   checkGLError("create textures");
 
@@ -1140,6 +1141,7 @@ int main(int argc, char *argv[]) {
   raymarch_shader.setFloat("grid_res_b_factor", resolution_b_factor);
   raymarch_shader.setFloat("screen_res", camera.getRadius() / SCR_WIDTH);
   raymarch_shader.setBool("varyAmplitude", varyAmplitude);
+  raymarch_shader.setBool("useAO", ambientOcclusion);
 
   // ao_shader.use();
   // ao_shader.setVec3("dims", dim_grid);
@@ -1257,7 +1259,7 @@ int main(int argc, char *argv[]) {
             // Result not ready yet (should be rare with NUM_FRAMES_DELAY=2+)
             // Keep the old value or mark as invalid
              glFrameTimesNs[readIndex] = 0; // Or some other indicator
-            std::cerr << "Warning: GL Query result not ready for frame " << currentFrameIndex - NUM_FRAMES_DELAY << std::endl;
+             // std::cerr << "Warning: GL Query result not ready for frame " << currentFrameIndex - NUM_FRAMES_DELAY << std::endl; //NOTE: comment out for warning
         }
 
         // --- Optional: Average the valid results over the delay buffer ---
@@ -1415,7 +1417,7 @@ int main(int argc, char *argv[]) {
 
     //NOTE: Uncomment for rotating molecule
     // camera.rotate_angle_axis(glm::radians(10.0), glm::vec3(0, 1, 0)); //NOTE: 10.0 radians for avg. over 36 frames
-    camera_changed = true;
+    // camera_changed = true;
 
     if (!setView) {
       view = camera.GetViewMatrix();
@@ -1781,8 +1783,9 @@ int main(int argc, char *argv[]) {
       raymarch_shader.setVec3("camera_pos", camera_pos);
       raymarch_shader.setVec3("camera_front", camera_front);
       raymarch_shader.setVec2("resolution", glm::vec2(SCR_WIDTH, SCR_HEIGHT));
-      raymarch_shader.setFloat("screen_res", camera.getRadius() / SCR_WIDTH);
+      raymarch_shader.setFloat("screen_res", camera.getRadius() * 2 / SCR_WIDTH);
       raymarch_shader.setBool("varyAmplitude", varyAmplitude);
+      raymarch_shader.setBool("useAO", ambientOcclusion);
       glDrawArrays(GL_TRIANGLES, 0, 6);
       glDisable(GL_BLEND);
 
@@ -1854,6 +1857,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action,
     } else {
       varyAmplitude = true;
     }
+    camera_changed = true;
+  }
+  if (key == GLFW_KEY_O && action == GLFW_PRESS) {
+    if (ambientOcclusion) {
+      ambientOcclusion = false;
+    } else {
+      ambientOcclusion = true;
+    }
+    camera_changed = true;
   }
 }
 

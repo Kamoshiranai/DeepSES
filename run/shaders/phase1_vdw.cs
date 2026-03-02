@@ -3,7 +3,7 @@
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 layout(r32f, binding = 0) uniform image3D img_dist_field;
 // layout(r32f, binding = 3) uniform image3D img_b_factor;
-layout(rgba32f, binding = 4) uniform image3D img_atom_color;
+// layout(rgba32f, binding = 4) uniform image3D img_atom_color;
 
 struct atom {
   vec3 coords;
@@ -103,5 +103,5 @@ void main() {
 
   imageStore(img_dist_field, ivec3(pixel_coords), vec4(minimum, 0.0, 0.0, 0.0));
   // imageStore(img_b_factor, ivec3(pixel_coords), vec4(closest.b_factor, 0.0, 0.0, 0.0));
-  imageStore(img_atom_color, ivec3(pixel_coords), vec4(closest.element_color, 0.0));
+  // imageStore(img_atom_color, ivec3(pixel_coords), vec4(closest.element_color, 0.0));
 }

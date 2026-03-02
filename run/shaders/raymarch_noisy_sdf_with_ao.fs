@@ -2,12 +2,12 @@
 // precision highp float;
 // precision highp int;
 
-in vec2 TexCoords; //NOTE: passthrough.vs returns values in [-1,1]
+in vec2 TexCoords; //NOTE: passthrough.vs returns values in [0,1]
 out vec4 fragColor;
 
 layout(binding = 0) uniform sampler3D grid; // sdf values
 layout(binding = 3) uniform sampler3D b_factor_grid; //NOTE: b-factor values are bound to 3, smoothed values to 5
-layout(binding = 4) uniform sampler3D atom_color_grid;
+// layout(binding = 4) uniform sampler3D atom_color_grid;
 const vec3 OBJECT_COLOR = vec3(0.79); // gamma corrected 0.9
 uniform mat4 view;
 uniform mat4 projection;
@@ -20,6 +20,7 @@ uniform float grid_res; // world space size (Angstrom) of one voxel
 uniform float grid_res_b_factor; // world space size (Angstrom) of one voxel
 uniform float screen_res; // world space size of one pixel, in A / px
 uniform bool varyAmplitude; //NOTE: vary amplitude OR frequency
+uniform bool useAO; //NOTE: vary amplitude OR frequency
 
 //NOTE: amplitude values are specified in a range of [0,1] which is reparametrized, s.t. the distances are perceptually uniform.
 // We pass those values through a sigmoid (reparam.) and then through a linear transform mapping the values to the range [0.002, 0.14].
@@ -48,12 +49,16 @@ const float PI = 3.14159265359;
 // const float MIN_STEP_SIZE = EPSILON * 0.1;
 const float MIN_STEP_SIZE = grid_res / 100; //TODO making this smaller than grid_res / 10 leads to black transitions between areas of different b-factor, for diffuse shading, 
 // but having it smaller gives better results for high freq. areas
-const float SCALE_STEP_SIZE = 0.1; //0.1
+const float SCALE_STEP_SIZE_NEAR = 0.1; //0.1
+const float SCALE_STEP_SIZE_FAR = 0.2;
 const int MAX_STEPS = 5000; // 1500
+const float r_probe = 1.4; // probe radius in Angstrom
 
 float bFactorBinning(float b_factor) {
+  // if (b_factor < 0.5) {return 0.0;}
+  // else {return 1.0;}
   float binWidth = 1.0 / numBins;
-  return (floor(b_factor / binWidth) + 0.5) * binWidth; // divide [0,1] in equal-sized bins and map values to center of bin
+  return (floor(b_factor / binWidth)) / (numBins - 1.0); // no need to clamp largest value, as already done in sigmoid
 }
 
 float sigmoid(float a, float b, float x) {
@@ -71,8 +76,8 @@ float perceptualFrequencyToWorldUnits(float freqPerceptual) {
   // 2. map to range [4, 25]
   // 3. map to px 
   // 4. map to World units
-  return sigmoid(0.2030, 0.9180, freqPerceptual)
-  * (25. - 4.) + 4.
+  return (sigmoid(0.2030, 0.9180, freqPerceptual)
+  * (25. - 4.) + 4.)
   * baseFrequencyPx 
   / screen_res; 
 }
@@ -85,8 +90,8 @@ float perceptualAmplitudeToWorldUnits(float amplitudePerceptual) {
   // 2. map to range [0.002, 0.14]
   // 3. map to px 
   // 4. map to World units
-  return sigmoid(0.1441, 1.188, amplitudePerceptual)
-  * (0.14 - 0.002) + 0.002
+  return (sigmoid(0.1441, 1.188, amplitudePerceptual)
+  * (0.14 - 0.002) + 0.002)
   * baseAmplitudePx 
   * screen_res;
 }
@@ -98,7 +103,8 @@ vec3 pos_in_grid(vec3 pos, vec3 dimensions, float grid_resolution) {
 
 vec3 getWorldPosfromScreenPos(vec2 screenPos) {
   vec4 worldPos =
-      inverse(projection * view) * vec4(2.0f * screenPos - 1.0f, 0.0f, 1.0f);
+      // inverse(projection * view) * vec4(screenPos, 0.0f, 1.0f);
+      inverse(projection * view) * vec4(2.0f * screenPos - 1.0f, 0.0f, 1.0f); //NOTE: if vertex shader returns values in [0,1]
   return worldPos.xyz / worldPos.w;
 }
 
@@ -461,12 +467,12 @@ vec3 hemisphereSample(vec3 normal, int i) {
 
 float rayTracedAO(vec3 pos, vec3 normal) {
   float ao = 0.0;
-  int nSamples = 200;
+  int nSamples = 200; // interactive 100-200
   vec3 noiseGradient; // needs to be given to noise computation even though we
                       // don't need it here
   float uncertainty = 1.0; 
   float maxDist = grid_res * dims.x / 4;
-  int maxSteps = 100;
+  int maxSteps = 200; // interactive 100
   for (int i = 0; i < nSamples; i++) {
     vec3 dir = hemisphereSample(normal, i);
     // float t = 0.; //NOTE: would this not mean we get an immediate hit at the starting position? but not if we take dist * 0.5 in raymarching and dist in ao ...
@@ -480,7 +486,11 @@ float rayTracedAO(vec3 pos, vec3 normal) {
         hit = true;
         break;
       }
-      // dist *= SCALE_STEP_SIZE; //TODO looks similar without this and is faster
+      if (dist < EPSILON + 0.5 * maxAmplitudeWorldUnits) {
+        dist *= 0.25; // for interactive 0.5 for pictures 0.25
+      } else {
+        dist *= 1.0;
+      }
       dist = max(dist, MIN_STEP_SIZE);
       t += dist;
       if (t > maxDist)
@@ -506,14 +516,16 @@ float addNoise(vec3 pos, float frequency, float amplitude, float uncertainty, ou
 }
 
 float noisySceneSDF(vec3 pos, float uncertainty, out vec3 noiseGradient) {
-    // modify amplitude / frequency accordint to B-factor
-    vec3 coords_grid_b_factor = pos_in_grid(pos, dims_b_factor, grid_res_b_factor);
-    float b_factor = textureLod(b_factor_grid, coords_grid_b_factor, 0.0).x;
-    float localAmp = varyAmplitude ? perceptualAmplitudeToWorldUnits(b_factor) : (defaultAmplitudeWorldUnits);
-    float localFreq = varyAmplitude ? (defaultFrequencyWorldUnits) : perceptualFrequencyToWorldUnits(b_factor);
     vec3 coords_grid = pos_in_grid(pos, dims, grid_res);
     float dist = textureLod(grid, coords_grid, 0.0).x;
-    dist += addNoise(pos, localFreq, localAmp, uncertainty, noiseGradient); 
+    // if (dist < r_probe - 0.2) { //NOTE: to remove noise outside when molekule dimensions are small relative to noise
+      // modify amplitude / frequency accordint to B-factor
+      vec3 coords_grid_b_factor = pos_in_grid(pos, dims_b_factor, grid_res_b_factor);
+      float b_factor = textureLod(b_factor_grid, coords_grid_b_factor, 0.0).x;
+      float localAmp = varyAmplitude ? perceptualAmplitudeToWorldUnits(b_factor) : (defaultAmplitudeWorldUnits);
+      float localFreq = varyAmplitude ? (defaultFrequencyWorldUnits) : perceptualFrequencyToWorldUnits(b_factor);
+      dist += addNoise(pos, localFreq, localAmp, uncertainty, noiseGradient); 
+    // }
     return dist;
 }
 
@@ -536,7 +548,7 @@ void main() {
 
   // --- Raymarching loop ---
   // float rayDepth = 0.0;
-  float rayDepth = -grid_res * 16; //NOTE: back up a bit to avoid hitting surface to early when zoomed in
+  float rayDepth = -grid_res * 64; //NOTE: back up a bit to avoid hitting surface to early when zoomed in
   float dist;
   vec3 pos;
   bool hit = false;
@@ -550,9 +562,9 @@ void main() {
       break;
     }
     if (dist < EPSILON + 1.5 * maxAmplitudeWorldUnits) { 
-      dist *= SCALE_STEP_SIZE;
+      dist *= SCALE_STEP_SIZE_NEAR;
     } else {
-      dist *= 0.5;
+      dist *= SCALE_STEP_SIZE_FAR;
     }
     dist = max(dist, MIN_STEP_SIZE);
     rayDepth += dist;
@@ -573,8 +585,12 @@ void main() {
     // vec3 atom_color = textureLod(atom_color_grid, coords_grid, 0.0).xyz;
     vec3 normal = calculateNormal(coords_grid, noiseGradient);
     diffuse = calculateDiffuse(pos, normal, rayOrigin);
-    ao = rayTracedAO(pos, normal);
-    color = diffuse * 0.8 * OBJECT_COLOR + 0.2 * ao * OBJECT_COLOR; 
+    if (useAO) {
+      ao = rayTracedAO(pos, normal);
+      color = diffuse * 0.8 * OBJECT_COLOR + 0.2 * ao * OBJECT_COLOR; 
+    } else {
+      color = diffuse * OBJECT_COLOR;
+    }
     // color = diffuse * 0.8 * atom_color + 0.2 * ao * atom_color; 
     // color = vec3(bFactorBinning(b_factor));
   }

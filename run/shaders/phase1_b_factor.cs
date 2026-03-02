@@ -67,7 +67,8 @@ void main() {
 
   // Set minimum to some value larger than r_probe. This minimum will be updated
   // if atoms are sufficiently close
-  float minimum = r_probe;
+  float b_factor_closest_atom = 0.0; //NOTE: default value
+  float minimum = r_probe; //TODO was r_probe, but this would mean we dont change default if no atom is closer than r_probe
 
   // Iterate through neighboring cells in the neighbor grid
   for (int i = max(0, grid_coords.x - 1);
@@ -88,6 +89,7 @@ void main() {
           if (minimum > dist) {
             minimum = dist;
             closest = atoms[n_index];
+            b_factor_closest_atom = closest.b_factor;
           }
         }
       }
@@ -100,6 +102,7 @@ void main() {
     minimum = -1 * resolution;
   }
 
-  imageStore(img_b_factor, ivec3(pixel_coords), vec4(closest.b_factor, 0.0, 0.0, 0.0));
+  imageStore(img_b_factor, ivec3(pixel_coords), vec4(b_factor_closest_atom, 0.0, 0.0, 0.0));
+  // imageStore(img_b_factor, ivec3(pixel_coords), vec4(closest.b_factor, 0.0, 0.0, 0.0));
   // imageStore(img_atom_color, ivec3(pixel_coords), vec4(closest.element_color, 0.0));
 }
