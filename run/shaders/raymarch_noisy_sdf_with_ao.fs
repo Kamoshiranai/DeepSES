@@ -87,11 +87,11 @@ float perceptualAmplitudeToWorldUnits(float amplitudePerceptual) {
   // b-factor binning
   // if (binBFactor) amplitudePerceptual = bFactorBinning(amplitudePerceptual);
   // 1. perceptual amplitudes are given in [0,1] and reparametrized using a fitted sigmoid
-  // 2. map to range [0.002, 0.14]
+  // 2. map to range [0, 0.14]
   // 3. map to px 
   // 4. map to World units
-  return (sigmoid(0.1441, 1.188, amplitudePerceptual)
-  * (0.14 - 0.002) + 0.002)
+  return sigmoid(0.1441, 1.188, amplitudePerceptual)
+  * 0.14
   * baseAmplitudePx 
   * screen_res;
 }
