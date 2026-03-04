@@ -32,7 +32,7 @@ It can be used to train a neural network for predicting the signed distance fiel
 
 ## Overview
 
-This project implements the methods described in our paper and contains two main components:  
+This project implements reparametrized noise (amplitude / frequency modulation) for SDFs for the SES as described in our paper, and is based on ... . 
 
 1. **Training code** in Python: We use Pytorch to train a 3D convolutional neural network (CNN) to predict the SDF of the SES from the SDF of the vdW surface for molecules of different sizes.     
 The model works on patches of size 64³ from the whole SDF for which we set a default resolution of 512³, but it can also be used for larger resolutions.    
@@ -43,10 +43,10 @@ The training data can be found [here](https://doi.org/10.5281/zenodo.17086718).
 The trained Pytorch model is saved as an .onnx file and used to create TensorRT engine for inference, which is optimized for the used hardware.     
 The pipeline works roughly as follows:  
     - A compute shader in OpenGL computes the vdW SDF (3D texture). 
-    - This texture is then mapped to a CUDA buffer and passed through the TensorRT engine to compute the SES SDF (simplified, see below).
-    - The buffer is then unmapped from CUDA to let OpenGL use it to render the SES via raymarching.  
-
-    To speed up the inference (and save some GPU memory) we only compute the SES SDF for the patches which are visible from the current camera position and where it differs from the vdW SDF. Those patches are determined by raymarching the vdW SDF and filtered before copying them into a CUDA buffer for inference.
+    - The SES SDF is computed via the TensorRT engine.
+    - A ray marching shader is used to render the SDF while adding simplex noise.
+    - (optionally ambient occlusion is computed)
+In this demo we compute the vdW and SES SDF only once at the beginning but it can also be recomputed each frame (by setting model_changed = true after computing the SES SDF).
 
 ---
 
@@ -58,38 +58,6 @@ This repository accompanies the following paper:
 **Authors:** Niklas Merk, Anna Sterzik, Kai Lawonn  
 **Published in:** *Computers & Graphics (C&G), VCBM 2025*  
 **Paper link:** [View Paper](https://doi.org/10.1016/j.cag.2025.104392)
-
----
-
-## Training
-
-### Environment Setup
-
-Create the Conda environment:
-
-```bash
-cd train
-conda env create --file=environment.yml
-conda activate deepses
-````
-
-### Data
-
-Download and extract the training data into the training directory:
-
-```bash
-wget https://doi.org/10.5281/zenodo.17086719/files/sdf_data.zip
-unzip sdf_data.zip
-```
-
-### Training Instructions
-
-In the file [learn.py](train/learn.py) you can adjust the training parameters (choose the model, batch size, number of epochs, how much ram to use, etc.)     
-Run training with:
-
-```bash
-python learn.py
-```
 
 ---
 
@@ -153,24 +121,14 @@ make
 ```bash
 cd apps
 ./create_engine # this may take some time
-#NOTE: you can run other pre-trained models by adjusting the paths in create_engine.cc and interactive-deepses.cc
+#NOTE: you can run other pre-trained models by adjusting the paths in create_engine.cc and deepses_with_noise.cc
 
 # execute deepses for a molecule file
-./interactive-deepses <path_to_this_repo>/deepses/run/data/pdb/vcbm_eval/<some_molecule_file>.cif.gz 8
-#NOTE: the second argument is the number of patches (size 64) to use per dimension, this means 8 patches will result in a texture of size (8 * 64 = 512)³.
+./deepses_with_noise <path_to_this_repo>/deepses/run/data/pdb/vcbm_eval/<some_molecule_file>.cif.gz 2
+#NOTE: the second argument is the number of patches (size 64) to use per dimension, this means 2 patches will result in a texture of size (2 * 64 = 128)³.
 
-# You can also run deepses with ambient occlusion
-./interactive-deepses_with_ao <path_to_this_repo>/deepses/run/data/pdb/vcbm_eval/<some_molecule_file>.cif.gz 8
 ```
-
-5. You can also run a re-implementation of the [Hermosilla method](https://doi.org/10.1007/s00371-017-1397-2) or render just the van-der-Waals surface
-```bash
-# Hermosilla method
-./interactive-hermosilla-method <path_to_this_repo>/deepses/run/data/pdb/vcbm_eval/<some_molecule_file>.cif.gz 8
-
-# vdW surface
-./interactive-vdw <path_to_this_repo>/deepses/run/data/pdb/vcbm_eval/<some_molecule_file>.cif.gz 8
-```
+You can switch between amplitude and frequency modulation with ```space``` and turn on ambient occlusion with ```o```.
 
 ---
 
