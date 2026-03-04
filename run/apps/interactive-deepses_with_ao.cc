@@ -496,11 +496,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action,
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 glm::vec3 get_arcball_vector(int x, int y);
 
-// settings
-
-// Orthographic cameras field width chimerax (use camera command to show)
-float w; // = 100.59; //NOTE for chimeraX
-
 // Scr_WIDTH and HEIGHT need to be doubled from the chimerax values (command
 // (window size))
 unsigned int SCR_WIDTH = 1000;
@@ -639,8 +634,6 @@ int main(int argc, char *argv[]) {
   //  This is the distance to the center of the molecule in which the camera
   //  is placed
   camera.setRadius(scale_model); //NOTE: camera radius is in world space units (Angstrom)
-  // is set to scale_model / 2, scale_model now corresponds to SCREEN_WIDTH, 
-  // as we later set the orthog. proj. matrix to (-camera.getRadius(), camera.getRadius(), ...)
 
   // Put the model at the scene origin
   glm::mat4 model = glm::mat4(1.0f);
@@ -797,28 +790,6 @@ int main(int argc, char *argv[]) {
                GL_FLOAT, NULL);
   glBindImageTexture(2, tex_normal, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-  // glGenTextures(1, &tex_color);
-  // glActiveTexture(GL_TEXTURE3);
-  // glBindTexture(GL_TEXTURE_2D, tex_color);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA,
-  //              GL_FLOAT, NULL);
-  // glBindImageTexture(3, tex_color, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-
-  // glGenTextures(1, &tex_ao);
-  // glActiveTexture(GL_TEXTURE4);
-  // glBindTexture(GL_TEXTURE_2D, tex_ao);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  // glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RED,
-  //              GL_FLOAT, NULL);
-  // glBindImageTexture(4, tex_ao, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
-
   // 3D Texture for the distance field stores color of the closest atom and
   // distance to surface
   GLuint tex_dist_field;
@@ -835,7 +806,7 @@ int main(int argc, char *argv[]) {
 
   // B-factor
   GLuint tex_b_factor;
-  const int voxels_per_dim_b_factor = 12 * 64; //TODO
+  const int voxels_per_dim_b_factor = 12 * 64; //NOTE: can choose resolution of b-factor texture
   const float resolution_b_factor = scale_model / voxels_per_dim_b_factor;
   const glm::ivec3 dim_grid_b_factor = glm::ivec3(voxels_per_dim_b_factor);
   glGenTextures(1, &tex_b_factor);
@@ -849,20 +820,7 @@ int main(int argc, char *argv[]) {
   glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
   glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, dim_grid_b_factor.x, dim_grid_b_factor.y, dim_grid_b_factor.z, 0, GL_RED, GL_FLOAT, NULL);
   // bind texture to image binding 3
-  glBindImageTexture(3, tex_b_factor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F); //TODO how to choose?
-
-  // smoothed B-factor
-  // GLuint tex_smooth_b_factor;
-  // glGenTextures(1, &tex_smooth_b_factor);
-  // glActiveTexture(GL_TEXTURE5);
-  // glBindTexture(GL_TEXTURE_3D, tex_smooth_b_factor);
-  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  // glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, dim_grid_b_factor.x, dim_grid_b_factor.y, dim_grid_b_factor.z, 0, GL_RED, GL_FLOAT, NULL);
-  // glBindImageTexture(5, tex_smooth_b_factor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F); //TODO how to choose?
+  glBindImageTexture(3, tex_b_factor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 
   // // atom color
   // GLuint tex_atom_color;
@@ -875,7 +833,7 @@ int main(int argc, char *argv[]) {
   // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
   // glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, dim_grid.x, dim_grid.y, dim_grid.z, 0, GL_RGBA, GL_FLOAT, NULL);
-  // glBindImageTexture(4, tex_atom_color, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F); //TODO how to choose?
+  // glBindImageTexture(4, tex_atom_color, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
 
   checkGLError("create textures");
 
@@ -888,7 +846,6 @@ int main(int argc, char *argv[]) {
   // Calculate vdw
   cShader phase1_shader("shaders/phase1_vdw.cs");
   cShader phase1_b_factor_shader("shaders/phase1_b_factor.cs");
-  // cShader smooth_b_factor_shader("shaders/smooth_b_factor.cs");
   //NOTE: do raymarching and ao in fragment shader
   Shader raymarch_shader("shaders/passthrough.vs", "shaders/raymarch_noisy_sdf_with_ao.fs");
 
@@ -972,7 +929,8 @@ int main(int argc, char *argv[]) {
   // build TensorRT engine
   nvinfer1::IRuntime* runtime = nvinfer1::createInferRuntime(logger);
   // open model from file
-  const std::string enginePath = "C:\\Users\\niklas\\source\\repos\\noiseSES\\run\\data\\engines\\unet_4_ch_1-2-4_mults_10_06_25_FP16.trt"; //"../../data/engines/unet_4_ch_1-2-4_mults_10_06_25_FP16.trt";
+  const std::string enginePath = "C:\\Users\\niklas\\source\\repos\\noiseSES\\run\\data\\engines\\unet_8_ch_1-2-4-4_mults_02_06_25_FP16.trt"; //"../../data/engines/unet_4_ch_1-2-4_mults_10_06_25_FP16.trt";
+  //FIXME
 
   std::ifstream file(enginePath, std::ios::binary);
 
@@ -1094,35 +1052,6 @@ int main(int argc, char *argv[]) {
   checkCudaErrors(cudaMalloc(&scanResults, batchDim * sizeof(int)));
 
   long long compact_buffer_voxels = (long long)batchDim * patchVoxels;
-  //NOTE we usually dont need all 8^3 patches to fit in the buffer, so we can save some memory by making it smaller
-  #ifdef _WIN32
-    // if (patches_per_dim == 6) {
-    //   compact_buffer_voxels = (long long)160 * patchVoxels;
-    // }
-    // if (patches_per_dim == 8) { //NOTE: can be optimized but is enough for 25 patches per dim with 24 GB VRAM
-    //   compact_buffer_voxels = (long long)350 * patchVoxels;
-    // }
-    // if (patches_per_dim == 10) {
-    //   compact_buffer_voxels = (long long)500 * patchVoxels;
-    // }
-    // if (patches_per_dim == 12) {
-    //   compact_buffer_voxels = (long long)700 * patchVoxels;
-    // }
-    // if (patches_per_dim == 14) {
-    //   compact_buffer_voxels = (long long)800 * patchVoxels;
-    // }
-  #else
-    if (patches_per_dim > 8) { //NOTE: can be optimized but is enough for 25 patches per dim with 24 GB VRAM
-      compact_buffer_voxels /= 2;
-    }
-    if (patches_per_dim >= 16) {
-      compact_buffer_voxels /= 2;
-    }
-    if (patches_per_dim >= 20) {
-      compact_buffer_voxels /= 4;
-      compact_buffer_voxels *= 3;
-    }
-  #endif
   checkCudaErrors(cudaMalloc(&filteredBatchedInputBuffer, compact_buffer_voxels * sizeof(float)));
 
   // ------------------------------------------------------------------------------
@@ -1132,8 +1061,6 @@ int main(int argc, char *argv[]) {
   double lastTime = glfwGetTime();
   int nbFrames = 0;
   raymarch_shader.use();
-  // raymarch_shader.setInt("num_atoms", num_atoms);
-  // raymarch_shader.setFloat("r_probe", r_probe);
   
   raymarch_shader.setVec3("dims", dim_grid);
   raymarch_shader.setVec3("dims_b_factor", dim_grid_b_factor);
@@ -1142,25 +1069,6 @@ int main(int argc, char *argv[]) {
   raymarch_shader.setFloat("screen_res", camera.getRadius() / SCR_WIDTH);
   raymarch_shader.setBool("varyAmplitude", varyAmplitude);
   raymarch_shader.setBool("useAO", ambientOcclusion);
-
-  // ao_shader.use();
-  // ao_shader.setVec3("dims", dim_grid);
-  // ao_shader.setFloat("grid_res", resolution);
-  // ao_shader.setInt("tex_pos", 1);
-  // ao_shader.setInt("tex_normal", 2);
-  // ao_shader.setInt("tex_sdf", 0);
-  // ao_shader.setBool("sdf_in_r_component", true);
-
-  // phong_shader.use();
-  // phong_shader.setBool("bool_uniform_color", bool_uniform_color);
-  // phong_shader.setInt("tex_pos", 1); 
-  // phong_shader.setInt("tex_normal", 2);
-  // phong_shader.setInt("tex_color", 3);
-  // phong_shader.setInt("tex_ao", 4);
-  // phong_shader.setVec3("uniform_color", uniform_color);
-
-  // field width from chimerax needs to be halfed
-  // w *= 0.5; // NOTE: chimeraX
 
   // Use high_resolution_clock for potentially better precision
   using Clock = std::chrono::high_resolution_clock;
@@ -1415,22 +1323,18 @@ int main(int argc, char *argv[]) {
     // Camera
     // ------------------------------------------------------------------------------
 
-    //NOTE: Uncomment for rotating molecule
-    // camera.rotate_angle_axis(glm::radians(10.0), glm::vec3(0, 1, 0)); //NOTE: 10.0 radians for avg. over 36 frames
     // camera_changed = true;
 
     if (!setView) {
       view = camera.GetViewMatrix();
       camera_pos = camera.getPosition();
-      w = camera.getRadius(); // * 0.5f; //NOTE for chimeraX
       camera_front = glm::normalize(camera.getFront());
     }
 
     float aspect = (float)SCR_WIDTH / SCR_HEIGHT;
+    float camera_radius = camera.getRadius();
     glm::mat4 projection =
-        // glm::ortho(-w, w, -w / aspect, w / aspect, -200.0f, 200.0f);
-        glm::ortho(-w, w, -w / aspect, w / aspect, -2 * scale_model, 2 * scale_model);
-        // glm::ortho(-scale_model / 2, scale_model / 2, -scale_model / 2 / aspect, scale_model / 2 / aspect, -scale_model, scale_model);
+        glm::ortho(-camera_radius, camera_radius, -camera_radius / aspect, camera_radius/ aspect, -2 * scale_model, 2 * scale_model);
 
     if (camera_changed) {
       if (model_changed) {
@@ -1471,18 +1375,6 @@ int main(int argc, char *argv[]) {
         // This ensures all previous imageStore() calls are visible to subsequent texture() / texelFetch() calls.
         glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
         checkGLError("memory barrier phase1_b_factor_shader");
-
-        // // smooth B-factor grid
-        // smooth_b_factor_shader.use();
-        // checkGLError("use smooth_b_factor_shader");
-
-        // glDispatchCompute(dim_grid_b_factor.x / 8, dim_grid_b_factor.y / 8, dim_grid_b_factor.z / 8);
-        // checkGLError("dispatch compute smooth_b_factor_shader");
-
-        // // This ensures all previous imageStore() calls are visible to subsequent texture() / texelFetch() calls.
-        // glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
-        // glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
-        // checkGLError("memory barrier smooth_b_factor_shader");
 
         // ------------------------------------------------------------------------------
         // Reset neighbors buffers to 0 for the next time step
@@ -1871,13 +1763,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action,
 
 void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
   // zoom
-  // NOTE: only change radius (for screen size), not position, to keep camera distance to object
-  // glm::vec3 lastPos = camera.getPosition(); // mod
-  // glm::vec3 front = camera.getFront(); // mod
-  // float lastRadius = camera.getRadius(); // mod
   camera.setRadius(camera.getRadius() + 4.0 * yoffset);
-  // camera.setPos3d(lastPos + glm::vec3(front.x * 4.0 * yoffset, front.y * 4.0 * yoffset, front.z * 4.0 * yoffset)); // mod
   camera_changed = true;
 }
-
-// cd .. & cmake --build . --config x64-Debug & cd apps & interactive-deepses_with_ao.exe C:\Users\niklas\source\repos\sdf\data\pdb\100-500\1OMK.cif.gz 4
