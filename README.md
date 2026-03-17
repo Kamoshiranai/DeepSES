@@ -34,12 +34,7 @@ It can be used to train a neural network for predicting the signed distance fiel
 
 This project implements reparametrized noise (amplitude / frequency modulation) for SDFs for the SES as described in our paper, and is based on ... . 
 
-1. **Training code** in Python: We use Pytorch to train a 3D convolutional neural network (CNN) to predict the SDF of the SES from the SDF of the vdW surface for molecules of different sizes.     
-The model works on patches of size 64³ from the whole SDF for which we set a default resolution of 512³, but it can also be used for larger resolutions.    
-Each 64³ patch is randomly sampled from a set of molecules and from the whole 512³ SDF. Additionally, we apply a random augmentation to each patch (mirroring or flipping axes).    
-The training data can be found [here](https://doi.org/10.5281/zenodo.17086718).
-
-2. **Execution code** in C++: We use OpenGL, CUDA and TensorRT to compute and render the SDF of the SES.    
+**Execution code** in C++: We use OpenGL, CUDA and TensorRT to compute and render the SDF of the SES.    
 The trained Pytorch model is saved as an .onnx file and used to create TensorRT engine for inference, which is optimized for the used hardware.     
 The pipeline works roughly as follows:  
     - A compute shader in OpenGL computes the vdW SDF (3D texture). 
