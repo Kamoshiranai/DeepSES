@@ -88,3 +88,5 @@ docs/_build/
 
 # training data
 tensorboard/
+
+screenshots/

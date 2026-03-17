@@ -8,6 +8,7 @@
 #include <learnopengl/shader.h>
 #include <cif+pdbLoader.h>
 #include <utilities.h>
+#include <screenshot.h>
 
 #include <chrono> // for fps calculation
 #include <numeric> // for std::accumulate
@@ -1682,7 +1683,7 @@ int main(int argc, char *argv[]) {
       glDisable(GL_BLEND);
 
       glfwSwapBuffers(window);
-      camera_changed = false;
+      camera_changed = true; // can set this to false to only render when camera changes, but for screenshots to work we would need to rerender
     }
     glfwPollEvents();
 
@@ -1743,6 +1744,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action,
                   int mods) {
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
+  if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+    captureScreenshot();
+  }
   if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
     if (varyAmplitude) {
       varyAmplitude = false;

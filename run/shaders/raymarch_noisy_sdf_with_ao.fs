@@ -553,7 +553,8 @@ void main() {
   }
 
   // vec3 color = vec3(0.217); // gamma corrected 0.5
-  vec3 color = vec3(0.029); // gamma corrected 0.2
+  // vec3 color = vec3(0.029); // gamma corrected 0.2
+  vec3 color = vec3(1.0);
   float ao = 0.0;
   float diffuse = 0.0;
 
