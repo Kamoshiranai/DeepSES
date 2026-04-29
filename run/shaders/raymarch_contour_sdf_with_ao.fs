@@ -112,7 +112,8 @@ vec3 calculateNormal(vec3 coords_grid, vec3 noiseGradient) {
 
   vec3 normal = normalize(vec3(gradient_x, gradient_y, gradient_z));
 
-  return normalize(normal + noiseGradient);
+  // return normalize(normal + noiseGradient);
+  return normalize(normal);
 }
 
 float noisySceneSDF(vec3 pos, float uncertainty, out vec3 noiseGradient);
@@ -474,9 +475,10 @@ float rayTracedAO(vec3 pos, vec3 normal) {
         hit = true;
         break;
       }
-      if (dist < EPSILON + 0.5 * maxAmplitudeWorldUnits) {
-        dist *= 0.25; // for interactive 0.5 for pictures 0.25
-      }
+      dist *= 0.5;
+      // if (dist < EPSILON + 0.5 * maxAmplitudeWorldUnits) {
+      //   dist *= 0.25; // for interactive 0.5 for pictures 0.25
+      // }
       dist = max(dist, MIN_STEP_SIZE);
       t += dist;
       if (t > maxDist)
@@ -509,7 +511,7 @@ float noisySceneSDF(vec3 pos, float uncertainty, out vec3 noiseGradient) {
     float b_factor = textureLod(b_factor_grid, coords_grid_b_factor, 0.0).x;
     float localAmp = varyAmplitude ? perceptualAmplitudeToWorldUnits(b_factor) : (defaultAmplitudeWorldUnits);
     float localFreq = varyAmplitude ? (defaultFrequencyWorldUnits) : perceptualFrequencyToWorldUnits(b_factor);
-    dist += addNoise(pos, localFreq, localAmp, uncertainty, noiseGradient); 
+    // dist += addNoise(pos, localFreq, localAmp, uncertainty, noiseGradient); 
     return dist;
 }
 
@@ -532,19 +534,33 @@ void main() {
   float dist;
   vec3 pos;
   bool hit = false;
+  bool found = false;
   vec3 noiseGradient;
+  float smallest_dist = 20.0;
+  vec3 acc_color = vec3(1.0);
+  float b_factor;
 
   for (int i = 0; i < MAX_STEPS; i++) {
     pos = rayOrigin + rayDepth * rayDirection;
     dist = noisySceneSDF(pos, uncertainty, noiseGradient);
-    if (dist < EPSILON) {
-      hit = true;
+    vec3 coords_grid_b_factor = pos_in_grid(pos, dims_b_factor, grid_res_b_factor);
+    b_factor = clamp(textureLod(b_factor_grid, coords_grid_b_factor, 0.0).x, 0.0001, 0.9999);
+    if (found && dist > smallest_dist + EPSILON)
       break;
-    }
-    if (dist < EPSILON + 1.5 * maxAmplitudeWorldUnits) { 
-      dist *= SCALE_STEP_SIZE_NEAR;
-    } else {
-      dist *= SCALE_STEP_SIZE_FAR;
+    if (dist < b_factor * 0.5) {
+      found = true;
+      smallest_dist = min(smallest_dist, dist);
+      acc_color = vec3(0.0, 0.0, 0.0);
+      if (dist < EPSILON) {
+        hit = true;
+        break;
+      }
+      dist *= 0.5;
+      //if (dist < EPSILON + 1.5 * maxAmplitudeWorldUnits) { 
+      //  dist *= SCALE_STEP_SIZE_NEAR;
+      //} else {
+      //  dist *= SCALE_STEP_SIZE_FAR;
+      //}
     }
     dist = max(dist, MIN_STEP_SIZE);
     rayDepth += dist;
@@ -570,11 +586,12 @@ void main() {
     } else {
       color = diffuse * OBJECT_COLOR;
     }
+    acc_color = color;
     // color = diffuse * 0.8 * atom_color + 0.2 * ao * atom_color; 
   }
   // gamma
   // color = pow(color, vec3(0.4545));
-  color = pow(color, vec3(0.6));
+  acc_color = pow(acc_color, vec3(0.6));
 
-  fragColor = vec4(color, 1.0);
+  fragColor = vec4(acc_color, 1.0);
 }

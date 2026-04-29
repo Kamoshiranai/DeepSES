@@ -499,8 +499,8 @@ glm::vec3 get_arcball_vector(int x, int y);
 
 // Scr_WIDTH and HEIGHT need to be doubled from the chimerax values (command
 // (window size))
-unsigned int SCR_WIDTH = 1000;
-unsigned int SCR_HEIGHT = 1000;
+unsigned int SCR_WIDTH = 2000;
+unsigned int SCR_HEIGHT = 1400;
 
 // view matrix from chimerax (command 'view matrix' under view matrix camera)
 bool setView = false;
@@ -848,7 +848,8 @@ int main(int argc, char *argv[]) {
   cShader phase1_shader("shaders/phase1_vdw.cs");
   cShader phase1_b_factor_shader("shaders/phase1_b_factor.cs");
   //NOTE: do raymarching and ao in fragment shader
-  Shader raymarch_shader("shaders/passthrough.vs", "shaders/raymarch_noisy_sdf_with_ao.fs");
+  //Shader raymarch_shader("shaders/passthrough.vs", "shaders/raymarch_noisy_sdf_with_ao.fs");
+  Shader raymarch_shader("shaders/passthrough.vs", "shaders/raymarch_contour_sdf_with_ao.fs");
 
   neighbors_shader.use();
   // Size of the neighbors grid
@@ -1498,7 +1499,7 @@ int main(int argc, char *argv[]) {
         // NOTE: can use this instead to set all patches to 1 (relevant)
         // dim3 blocks(patches_per_dim);
         // dim3 threads(patches_per_dim * patches_per_dim);
-        // launchInitializeFlagsToInt(relevantPatches, batchDim, 1, blocks, threads, stream);
+        // launchInitializeFlagsToInt(relevantPatches, batchDim, 0, blocks, threads, stream);
 
         checkCudaErrorCode(cudaGetLastError());
 
